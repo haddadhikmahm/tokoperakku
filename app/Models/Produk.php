@@ -46,6 +46,11 @@ class Produk extends Model
 
     public function usaha()
     {
-        return $this->belongsToMany(Usaha::class, 'usaha_produk');
+        return $this->belongsToMany(Usaha::class, 'usaha_produk', 'produk_id', 'usaha_id');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
     }
 }

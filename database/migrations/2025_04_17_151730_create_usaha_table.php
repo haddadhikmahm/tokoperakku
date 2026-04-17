@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('link_gmap_usaha')->nullable();
             $table->enum('status_usaha', ['aktif', 'nonaktif', 'tutup', 'pending', 'dibekukan'])->default('aktif');
 
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
+            $table->foreignId('wilayah_id')->nullable()->constrained('wilayahs')->onDelete('set null');
             $table->timestamps();
         });
     }

@@ -15,7 +15,8 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
-        'role', // ➔ Tambahkan ini
+        'role',
+        'wilayah_id',
     ];
 
     protected $hidden = [
@@ -29,5 +30,30 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function wilayah()
+    {
+        return $this->belongsTo(Wilayah::class);
+    }
+
+    public function usaha()
+    {
+        return $this->hasOne(Usaha::class);
+    }
+
+    public function chatsSent()
+    {
+        return $this->hasMany(Chat::class, 'sender_id');
+    }
+
+    public function chatsReceived()
+    {
+        return $this->hasMany(Chat::class, 'receiver_id');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
     }
 }

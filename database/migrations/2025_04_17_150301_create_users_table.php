@@ -16,7 +16,8 @@ return new class extends Migration
             $table->string('username')->unique();
             $table->string('email')->unique();
             $table->string('password');
-            $table->enum('role', ['admin', 'guest'])->default('guest');
+            $table->enum('role', ['admin_utama', 'admin_wilayah', 'umkm', 'user'])->default('user');
+            $table->foreignId('wilayah_id')->nullable()->constrained('wilayahs')->onDelete('set null');
             $table->timestamps();
         });
     }

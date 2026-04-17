@@ -96,17 +96,15 @@
                                         <span class="usaha-spesialisasi">{{ $usaha->deskripsi_usaha ?? 'Kerajinan Perak Kotagede' }}</span>
                                     </div>
                                 </a>
-                                <div class="social-links">
-                                    <a href="#" target="_blank" class="social-icon email" title="Email"><i class="fa fa-envelope"></i></a>
-                                    <a href="https://wa.me/" target="_blank" class="social-icon whatsapp" title="WhatsApp"><i class="fa fa-phone"></i></a>
-                                    <a href="#" target="_blank" class="social-icon instagram" title="Instagram"><i class="fa fa-instagram"></i></a>
-                                    <a href="#" target="_blank" class="social-icon tiktok" title="TikTok"><i class="fa fa-tiktok"></i></a>
-                                    <a href="#" target="_blank" class="social-icon shopee" title="Shopee">
-                                        <img src="{{ asset('assets/images/shopee-icon.png') }}" alt="Shopee">
-                                    </a>
-                                    <a href="#" target="_blank" class="social-icon tokped" title="Tokopedia">
-                                        <img src="{{ asset('assets/images/tokopedia-icon.png') }}" alt="Tokopedia">
-                                    </a>
+                                <div class="social-links mt-2">
+                                    @if(Auth::check() && Auth::user()->role === 'user' && $usaha->user_id)
+                                        <a href="{{ route('chats.show', $usaha->user_id) }}" class="btn btn-sm btn-primary mb-2"><i class="fa fa-comments"></i> Chat Penjual</a>
+                                    @endif
+                                    <div class="d-flex gap-2">
+                                        <a href="#" target="_blank" class="social-icon email" title="Email"><i class="fa fa-envelope"></i></a>
+                                        <a href="https://wa.me/" target="_blank" class="social-icon whatsapp" title="WhatsApp"><i class="fa fa-phone"></i></a>
+                                        <a href="#" target="_blank" class="social-icon instagram" title="Instagram"><i class="fa fa-instagram"></i></a>
+                                    </div>
                                 </div>
                             @else
                                 <p class="text-muted">Informasi usaha tidak tersedia.</p>
@@ -119,6 +117,67 @@
                             <p>{{ $produk->deskripsi }}</p>
                         </div>
 
+                    </div>
+                </div>
+            </div>
+
+            {{-- Review Section --}}
+            <div class="row mt-5">
+                <div class="col-lg-12">
+                    <div class="review-section">
+                        <h4>Ulasan Pelanggan</h4>
+                        <hr>
+                        
+                        @if($produk->reviews->isEmpty())
+                            <p class="text-muted">Belum ada ulasan untuk produk ini.</p>
+                        @else
+                            <div class="reviews-list mb-4">
+                                @foreach($produk->reviews as $review)
+                                    <div class="review-item mb-3">
+                                        <div class="d-flex justify-content-between">
+                                            <strong>{{ $review->user->username }}</strong>
+                                            <span class="text-warning">
+                                                @for($i = 1; $i <= 5; $i++)
+                                                    <i class="fa fa-star{{ $i <= $review->rating ? '' : '-o' }}"></i>
+                                                @endfor
+                                            </span>
+                                        </div>
+                                        <p class="mb-1">{{ $review->comment }}</p>
+                                        <small class="text-muted">{{ $review->created_at->diffForHumans() }}</small>
+                                        <hr>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @auth
+                            @if(Auth::user()->role === 'user')
+                                <div class="add-review-form card p-4">
+                                    <h5>Tambah Ulasan</h5>
+                                    <form action="{{ route('reviews.store') }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="produk_id" value="{{ $produk->id }}">
+                                        <div class="form-group mb-3">
+                                            <label>Rating</label>
+                                            <select name="rating" class="form-control" required>
+                                                <option value="5">5 Bintang</option>
+                                                <option value="4">4 Bintang</option>
+                                                <option value="3">3 Bintang</option>
+                                                <option value="2">2 Bintang</option>
+                                                <option value="1">1 Bintang</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>Komentar</label>
+                                            <textarea name="comment" class="form-control" rows="3" placeholder="Tulis ulasan Anda..."></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Kirim Ulasan</button>
+                                    </form>
+                                </div>
+                            @endif
+                        @else
+                            <p class="text-muted">Silakan <a href="{{ route('login') }}">login</a> untuk memberikan ulasan.</p>
+                        @endauth
                     </div>
                 </div>
             </div>

@@ -6,12 +6,24 @@ use App\Http\Controllers\Controller;
 use App\Models\Usaha;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Wilayah;
 
 class UsahaController extends Controller
 {
     public function index()
     {
-        $dataUsaha = Usaha::all(); // atau bisa juga pakai paginate()
+        $user = Auth::user();
+        $query = Usaha::query();
+
+        if ($user->role === 'admin_wilayah') {
+            $query->where('wilayah_id', $user->wilayah_id);
+        } elseif ($user->role === 'umkm') {
+            $query->where('user_id', $user->id);
+        }
+        // admin_utama sees all
+
+        $dataUsaha = $query->get();
 
         return view('admin.usaha.index-usaha', [
             'usahas' => $dataUsaha
@@ -55,6 +67,10 @@ class UsahaController extends Controller
             // Mengupdate data dengan path relatif
             $data['foto_usaha'] = $path;
 
+            $user = Auth::user();
+            $userId = $request->input('user_id', $user->role === 'umkm' ? $user->id : null);
+            $wilayahId = $request->input('wilayah_id', ($user->role === 'admin_wilayah' || $user->role === 'umkm') ? $user->wilayah_id : null);
+
             // Simpan data foto produk ke database
             Usaha::create([
                 'kode_usaha' => $request->kode_usaha,
@@ -65,6 +81,8 @@ class UsahaController extends Controller
                 'foto_usaha' => $data['foto_usaha'],
                 'link_gmap_usaha' => $request->link_gmap_usaha,
                 'status_usaha' => $request->status_usaha,
+                'user_id' => $userId,
+                'wilayah_id' => $wilayahId,
             ]);
 
             // Redirect setelah berhasil

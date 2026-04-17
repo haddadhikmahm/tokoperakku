@@ -16,6 +16,8 @@ class Usaha extends Model
         'foto_usaha',
         'link_gmap_usaha',
         'status_usaha',
+        'user_id',
+        'wilayah_id',
     ];
 
     // public function usahaJenis()
@@ -41,5 +43,15 @@ class Usaha extends Model
     public function produks()
     {
         return $this->belongsToMany(Produk::class, 'usaha_produk', 'usaha_id', 'produk_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function wilayah()
+    {
+        return $this->belongsTo(Wilayah::class);
     }
 }
