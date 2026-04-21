@@ -97,9 +97,17 @@
                                     </div>
                                 </a>
                                 <div class="social-links mt-2">
-                                    @if(Auth::check() && Auth::user()->role === 'user' && $usaha->user_id)
-                                        <a href="{{ route('chats.show', $usaha->user_id) }}" class="btn btn-sm btn-primary mb-2"><i class="fa fa-comments"></i> Chat Penjual</a>
-                                    @endif
+                                    @auth
+                                        @if(Auth::id() !== $usaha->user_id)
+                                            <a href="{{ route('chats.show', $usaha->user_id) }}" class="btn btn-sm btn-primary mb-2 shadow-sm">
+                                                <i class="fa fa-comments"></i> Chat Penjual
+                                            </a>
+                                        @endif
+                                    @else
+                                        <a href="{{ route('loginForm') }}" class="btn btn-sm btn-outline-primary mb-2">
+                                            <i class="fa fa-sign-in"></i> Login untuk Chat
+                                        </a>
+                                    @endauth
                                     <div class="d-flex gap-2">
                                         <a href="#" target="_blank" class="social-icon email" title="Email"><i class="fa fa-envelope"></i></a>
                                         <a href="https://wa.me/" target="_blank" class="social-icon whatsapp" title="WhatsApp"><i class="fa fa-phone"></i></a>

@@ -12,20 +12,19 @@ class ChatController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
-        // Get unique users with whom the current user has chatted
-        $chatUsers = User::whereHas('chatsSent', function($q) use ($user) {
-            $q->where('receiver_id', $user->id);
-        })->orWhereHas('chatsReceived', function($q) use ($user) {
-            $q->where('sender_id', $user->id);
-        })->get();
+        $chatUsers = $this->getChatUsers($user);
 
-        return view('chats.index', compact('chatUsers'));
+        if (request()->ajax()) {
+            return response()->json($chatUsers);
+        }
+
+        return view('chats.index_new', compact('chatUsers'));
     }
 
     public function show(User $user)
     {
         $currentUser = Auth::user();
+        $chatUsers = $this->getChatUsers($currentUser);
         
         $messages = Chat::where(function($q) use ($currentUser, $user) {
             $q->where('sender_id', $currentUser->id)->where('receiver_id', $user->id);
@@ -39,21 +38,108 @@ class ChatController extends Controller
             ->where('is_read', false)
             ->update(['is_read' => true]);
 
-        return view('chats.show', compact('user', 'messages'));
+        if (request()->ajax()) {
+            return response()->json([
+                'user' => $user,
+                'messages' => $messages
+            ]);
+        }
+
+        return view('chats.show_new', compact('user', 'messages', 'chatUsers'));
+    }
+
+    private function getChatUsers($user)
+    {
+        // Define relevant roles to fetch automatically based on current user's role
+        $autoRoles = [];
+        if ($user->role === 'user') {
+            $autoRoles = ['umkm'];
+        } elseif ($user->role === 'umkm') {
+            $autoRoles = ['user'];
+        } elseif (in_array($user->role, ['admin_utama', 'admin_wilayah'])) {
+            $autoRoles = ['umkm', 'user', 'admin_wilayah', 'admin_utama'];
+        }
+
+        // Fetch users who:
+        // 1. Have already chatted with the current user OR
+        // 2. Are in the automatically discovery roles
+        return User::where('id', '!=', $user->id)
+            ->where(function($query) use ($user, $autoRoles) {
+                $query->whereHas('chatsSent', function($q) use ($user) {
+                    $q->where('receiver_id', $user->id);
+                })->orWhereHas('chatsReceived', function($q) use ($user) {
+                    $q->where('sender_id', $user->id);
+                });
+                
+                if (!empty($autoRoles)) {
+                    $query->orWhereIn('role', $autoRoles);
+                }
+            })
+            ->with(['usaha', 'chatsSent' => function($q) use ($user) {
+                $q->where('receiver_id', $user->id)->latest();
+            }, 'chatsReceived' => function($q) use ($user) {
+                $q->where('sender_id', $user->id)->latest();
+            }])
+            ->get()
+            ->map(function($u) use ($user) {
+                $lastSent = $u->chatsSent->first();
+                $lastReceived = $u->chatsReceived->first();
+                
+                $lastChat = collect([$lastSent, $lastReceived])->filter()->sortByDesc('created_at')->first();
+                
+                $u->display_name = ($u->role === 'umkm' && $u->usaha) ? $u->usaha->nama_usaha : $u->username;
+                $u->last_message = $lastChat ? $lastChat->message : '';
+                $u->last_chat_time_raw = $lastChat ? $lastChat->created_at : null;
+                $u->last_chat_time = $lastChat ? $lastChat->created_at->format('H:i') : '';
+                $u->unread_count = Chat::where('sender_id', $u->id)
+                    ->where('receiver_id', $user->id)
+                    ->where('is_read', false)
+                    ->count();
+                return $u;
+            })
+            ->sort(function($a, $b) {
+                if ($a->unread_count != $b->unread_count) {
+                    return $b->unread_count <=> $a->unread_count;
+                }
+                if ($a->last_chat_time_raw != $b->last_chat_time_raw) {
+                    return $b->last_chat_time_raw <=> $a->last_chat_time_raw;
+                }
+                return strcasecmp($a->display_name, $b->display_name);
+            })->values();
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
-            'message' => 'required|string',
+            'message' => 'nullable|string',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf,docx|max:5120',
         ]);
 
-        Chat::create([
+        $type = 'text';
+        $attachmentPath = null;
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $extension = $file->getClientOriginalExtension();
+            $type = in_array($extension, ['jpg', 'jpeg', 'png']) ? 'image' : 'file';
+            $attachmentPath = $file->store('chat_attachments', 'public');
+        }
+
+        $chat = Chat::create([
             'sender_id' => Auth::id(),
             'receiver_id' => $request->receiver_id,
-            'message' => $request->message,
+            'message' => $request->message ?? '',
+            'type' => $type,
+            'attachment' => $attachmentPath,
         ]);
+
+        // Broadcast the message for real-time delivery
+        broadcast(new \App\Events\MessageSent($chat))->toOthers();
+
+        if ($request->ajax()) {
+            return response()->json($chat);
+        }
 
         return back()->with('success', 'Pesan terkirim.');
     }

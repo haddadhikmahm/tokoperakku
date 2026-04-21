@@ -14,25 +14,39 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::create([
-        //     'name' => 'Admin User',
-        //     'email' => 'admin@example.com',
-        //     'password' => Hash::make('password'), // WAJIB di-hash
-        //     'role' => 'admin',
-        // ]);
-
-        // User::create([
-        //     'name' => 'Guest User',
-        //     'email' => 'guest@example.com',
-        //     'password' => Hash::make('password'), // WAJIB di-hash juga
-        //     'role' => 'guest',
-        // ]);
-
+        // Admin Utama
         User::create([
-            'username' => 'admin',
-            'email' => 'admin123@example.com',
-            'password' => Hash::make('12345'), // WAJIB di-hash
-            'role' => 'admin',
+            'username' => 'admin_utama',
+            'email' => 'admin@teko.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin_utama',
+        ]);
+
+        // Admin Wilayah (Linked to Kecamatan Perak)
+        User::create([
+            'username' => 'admin_wilayah',
+            'email' => 'admin_perak@teko.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin_wilayah',
+            'wilayah_id' => 1,
+        ]);
+
+        // UMKM User (Linked to Kecamatan Perak)
+        User::create([
+            'username' => 'umkm_user',
+            'email' => 'umkm@teko.com',
+            'password' => Hash::make('password'),
+            'role' => 'umkm',
+            'wilayah_id' => 1,
+        ]);
+
+        // Regular User
+        User::create([
+            'username' => 'regular_user',
+            'email' => 'user@teko.com',
+            'password' => Hash::make('password'),
+            'role' => 'user',
+            'wilayah_id' => 2,
         ]);
     }
 }

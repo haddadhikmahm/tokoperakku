@@ -14,8 +14,19 @@ class UsahaSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('usaha')->insert([
-            'nama_usaha' => Str::random(10),
-        ]);
+        $umkmUser = \App\Models\User::where('username', 'umkm_user')->first();
+
+        if ($umkmUser) {
+            \App\Models\Usaha::create([
+                'kode_usaha' => 'USH-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(6)),
+                'nama_usaha' => 'Kerajinan Perak Jaya',
+                'telp_usaha' => '081234567890',
+                'email_usaha' => 'info@perakjaya.com',
+                'deskripsi_usaha' => 'Bengkel kerajinan perak tradisional dengan kualitas terbaik.',
+                'status_usaha' => 'aktif',
+                'user_id' => $umkmUser->id,
+                'wilayah_id' => $umkmUser->wilayah_id,
+            ]);
+        }
     }
 }

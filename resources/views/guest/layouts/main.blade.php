@@ -54,11 +54,20 @@
                     <input class="form-control" type="search" name="search" placeholder="Cari produk atau kategori..." value="{{ request('search') }}">
                 </form>
 
-                <!-- Login -->
+                <!-- Login / Logout -->
                 <div>
-                    <a href="{{ route('loginForm') }}" class="text-dark d-flex align-items-center">
-                        <i class="fa fa-user me-2"></i> Login
-                    </a>
+                    @auth
+                        <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-link text-dark text-decoration-none d-flex align-items-center">
+                                <i class="fa fa-sign-out me-2"></i> Logout
+                            </button>
+                        </form>
+                    @else
+                        <a href="{{ route('loginForm') }}" class="text-dark d-flex align-items-center">
+                            <i class="fa fa-user me-2"></i> Login
+                        </a>
+                    @endauth
                 </div>
             </div>
         </nav>

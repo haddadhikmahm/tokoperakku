@@ -35,12 +35,36 @@ Route::get('produk/kategori/{slug}', [PageController::class, 'productsByCategory
 Route::get('produk/{slug}', [PageController::class, 'singleProduct'])->name('guest-singleProduct');
 
 
-Route::middleware(['role:admin_utama,admin_wilayah'])->group(function () {
-    Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+// Dynamic Middleware for all logged in users (Auth)
+Route::middleware(['auth'])->group(function () {
+    Route::match(['get', 'post'], 'logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('admin/profile', [AuthController::class, 'profile'])->name('profile');
     Route::get('admin/change-password', [AuthController::class, 'changePassword'])->name('change-password');
     Route::post('update-password', [AuthController::class, 'updatePassword'])->name('update-password');
+    
+    // Chat Routes (Shared)
+    Route::get('chats', [ChatController::class, 'index'])->name('chats.index');
+    Route::get('chats/{user}', [ChatController::class, 'show'])->name('chats.show');
+    Route::post('chats', [ChatController::class, 'store'])->name('chats.store');
+});
 
+// Admin & UMKM shared routes (Produk & Pelaporan)
+Route::middleware(['role:admin_utama,admin_wilayah,umkm'])->group(function () {
+    // Produk
+    Route::get('admin/produk', [ProdukController::class, 'index'])->name('admin.produk-index');
+    Route::get('admin/produk/create', [ProdukController::class, 'create'])->name('admin.produk-create');
+    Route::post('admin/produk/store', [ProdukController::class, 'store'])->name('admin.produk-store');
+    Route::get('admin/produk/edit/{id}', [ProdukController::class, 'edit'])->name('admin.produk-edit');
+    Route::put('admin/produk/update/{id}', [ProdukController::class, 'update'])->name('admin.produk-update');
+    Route::delete('admin/produk/destroy/{id}', [ProdukController::class, 'destroy'])->name('admin.produk-destroy');
+
+    // Export / Pelaporan
+    Route::get('admin/export-data', [ExportController::class, 'index'])->name('admin.export-data');
+    Route::get('admin/export-pengerajin', [ExportController::class, 'exportPengerajin'])->name('admin.export-pengerajin');
+});
+
+// Admin only routes
+Route::middleware(['role:admin_utama,admin_wilayah'])->group(function () {
     // Dashboard
     Route::get('admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
@@ -76,14 +100,6 @@ Route::middleware(['role:admin_utama,admin_wilayah'])->group(function () {
     Route::put('admin/kategori-produk/update/{id}', [KategoriProdukController::class, 'update'])->name('admin.kategori_produk-update');
     Route::delete('admin/kategori-produk/destroy/{id}', [KategoriProdukController::class, 'destroy'])->name('admin.kategori_produk-destroy');
 
-    // Produk
-    Route::get('admin/produk', [ProdukController::class, 'index'])->name('admin.produk-index');
-    Route::get('admin/produk/create', [ProdukController::class, 'create'])->name('admin.produk-create');
-    Route::post('admin/produk/store', [ProdukController::class, 'store'])->name('admin.produk-store');
-    Route::get('admin/produk/edit/{id}', [ProdukController::class, 'edit'])->name('admin.produk-edit');
-    Route::put('admin/produk/update/{id}', [ProdukController::class, 'update'])->name('admin.produk-update');
-    Route::delete('admin/produk/destroy/{id}', [ProdukController::class, 'destroy'])->name('admin.produk-destroy');
-
     // Foto Produk
     Route::get('admin/foto-produk', [FotoProdukController::class, 'index'])->name('admin.foto_produk-index');
     Route::get('admin/foto-produk/create', [FotoProdukController::class, 'create'])->name('admin.foto_produk-create');
@@ -115,23 +131,11 @@ Route::middleware(['role:admin_utama,admin_wilayah'])->group(function () {
     Route::get('admin/usaha-produk/edit/{id}', [UsahaProdukController::class, 'edit'])->name('admin.usaha_produk-edit');
     Route::put('admin/usaha-produk/update/{id}', [UsahaProdukController::class, 'update'])->name('admin.usaha_produk-update');
     Route::delete('admin/usaha-produk/destroy/{id}', [UsahaProdukController::class, 'destroy'])->name('admin.usaha_produk-destroy');
-
-    // Export Pengerajin
-    Route::get('admin/export-data', [ExportController::class, 'index'])->name('admin.export-data');
-    Route::get('admin/export-pengerajin', [ExportController::class, 'exportPengerajin'])->name('admin.export-pengerajin');
 });
 
 // UMKM Routes
 Route::middleware(['role:umkm'])->group(function () {
     Route::get('umkm/dashboard', [DashboardController::class, 'index'])->name('umkm.dashboard');
-    Route::post('logout', [AuthController::class, 'logout'])->name('umkm.logout');
-});
-
-// Chat Routes
-Route::middleware(['auth'])->group(function () {
-    Route::get('chats', [ChatController::class, 'index'])->name('chats.index');
-    Route::get('chats/{user}', [ChatController::class, 'show'])->name('chats.show');
-    Route::post('chats', [ChatController::class, 'store'])->name('chats.store');
 });
 
 // Review Routes
