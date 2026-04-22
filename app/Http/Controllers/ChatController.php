@@ -32,11 +32,16 @@ class ChatController extends Controller
             $q->where('sender_id', $user->id)->where('receiver_id', $currentUser->id);
         })->orderBy('created_at', 'asc')->get();
 
-        // Mark messages as read
-        Chat::where('sender_id', $user->id)
+        // Mark messages as read and broadcast event
+        $unreadMessages = Chat::where('sender_id', $user->id)
             ->where('receiver_id', $currentUser->id)
             ->where('is_read', false)
-            ->update(['is_read' => true]);
+            ->get();
+
+        foreach ($unreadMessages as $msg) {
+            $msg->update(['is_read' => true]);
+            broadcast(new \App\Events\MessageRead($msg))->toOthers();
+        }
 
         if (request()->ajax()) {
             return response()->json([
@@ -89,6 +94,8 @@ class ChatController extends Controller
                 
                 $u->display_name = ($u->role === 'umkm' && $u->usaha) ? $u->usaha->nama_usaha : $u->username;
                 $u->last_message = $lastChat ? $lastChat->message : '';
+                $u->last_message_sender_id = $lastChat ? $lastChat->sender_id : null;
+                $u->last_message_is_read = $lastChat ? $lastChat->is_read : false;
                 $u->last_chat_time_raw = $lastChat ? $lastChat->created_at : null;
                 $u->last_chat_time = $lastChat ? $lastChat->created_at->format('H:i') : '';
                 $u->unread_count = Chat::where('sender_id', $u->id)
@@ -119,8 +126,13 @@ class ChatController extends Controller
         $type = 'text';
         $attachmentPath = null;
 
+        $fileName = $request->message ?? '';
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
+            $originalName = $file->getClientOriginalName();
+            if (empty($fileName)) {
+                $fileName = $originalName;
+            }
             $extension = $file->getClientOriginalExtension();
             $type = in_array($extension, ['jpg', 'jpeg', 'png']) ? 'image' : 'file';
             $attachmentPath = $file->store('chat_attachments', 'public');
@@ -129,7 +141,7 @@ class ChatController extends Controller
         $chat = Chat::create([
             'sender_id' => Auth::id(),
             'receiver_id' => $request->receiver_id,
-            'message' => $request->message ?? '',
+            'message' => $fileName,
             'type' => $type,
             'attachment' => $attachmentPath,
         ]);
@@ -142,5 +154,21 @@ class ChatController extends Controller
         }
 
         return back()->with('success', 'Pesan terkirim.');
+    }
+
+    public function markAsRead(User $user)
+    {
+        $currentUser = Auth::user();
+        $unreadMessages = Chat::where('sender_id', $user->id)
+            ->where('receiver_id', $currentUser->id)
+            ->where('is_read', false)
+            ->get();
+
+        foreach ($unreadMessages as $msg) {
+            $msg->update(['is_read' => true]);
+            broadcast(new \App\Events\MessageRead($msg))->toOthers();
+        }
+
+        return response()->json(['status' => 'success']);
     }
 }

@@ -312,32 +312,6 @@ return [
         //     'topnav_right' => true,
         // ],
         // Topnav user menu
-        [
-            'text' => 'User',
-            'topnav_right' => true,
-            'icon' => 'fas fa-user',
-            'submenu' => [
-                [
-                    'text' => 'Profile',
-                    'url' => 'admin/profile',
-                    'icon' => 'fas fa-id-badge',
-                ],
-                [
-                    'text' => 'Change Password',
-                    'url' => 'admin/change-password',
-                    'icon' => 'fas fa-key',
-                ],
-                [
-                    'text' => 'Logout',
-                    'url' => '#',
-                    'icon' => 'fas fa-sign-out-alt',
-                    // 'method' => 'POST',
-                    // 'action' => 'logout',
-                    'id' => 'logout-button',
-                ]
-            ],
-        ],
-
         // Sidebar items:
         ['header' => 'MAIN NAVIGATION'],
     ],
