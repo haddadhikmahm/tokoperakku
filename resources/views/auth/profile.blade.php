@@ -1,90 +1,170 @@
-@extends('adminlte::page')
+@extends('layouts.admin_premium')
 
-@section('title', 'Profil Pengguna')
-
-@section('content_header')
-    <h1>Profil Pengguna</h1>
-@stop
-
-@section('content')
-    <div class="row">
-        <div class="col-md-9 col-lg-7">
-            <div class="card">
-                <div class="card-body">
-
-                    {{-- Bagian Avatar --}}
-                    <div class="text-center mb-4">
-                        @php
-                            // Ambil 2 huruf pertama dari nama untuk inisial
-                            $user = Auth::user();
-                            // Pecah nama menjadi beberapa bagian berdasarkan spasi
-                            $nameParts = explode(' ', $user->name);
-                            // Ambil huruf pertama dari kata pertama
-                            $firstInitial = strtoupper(substr($nameParts[0], 0, 1));
-                            // Ambil huruf pertama dari kata terakhir (aman untuk nama 1 kata)
-                            $lastInitial = strtoupper(substr(end($nameParts), 0, 1));
-                            // Gabungkan inisialnya
-                            $initials = $firstInitial . $lastInitial;
-                        @endphp
-                        <div class="profile-avatar-circle">
-                            <span>{{ $initials }}</span>
-                        </div>
-                    </div>
-
-                    {{-- Form Informasi Pengguna --}}
-                    <form>
-                        <div class="form-group">
-                            <label for="name">Nama</label>
-                            <input type="text" id="name" class="form-control" value="{{ $user->username }}" readonly>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="username">Username</label>
-                            <input type="text" id="username" class="form-control" value="{{ $user->username }}" readonly>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="email">Email</label>
-                            <input type="email" id="email" class="form-control" value="{{ $user->email }}" readonly>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="role">Role</label>
-                            <input type="text" id="role" class="form-control" value="{{ ucfirst($user->role ?? 'User') }}" readonly>
-                        </div>
-                    </form>
-
-                </div>
-            </div>
-        </div>
-    </div>
-@stop
+@section('title', 'Profil Admin')
 
 @section('css')
-    {{-- Tambahkan CSS kustom di sini --}}
     <style>
-        .profile-avatar-circle {
-            width: 80px;
-            height: 80px;
-            background-color: #6c757d; /* Warna abu-abu AdminLTE */
-            color: #fff;
-            border-radius: 50%;
+        .page-title {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: #000;
+            letter-spacing: -0.5px;
+        }
+
+        .profile-card {
+            background: linear-gradient(90deg, #f3f3f3 0%, #dcdcdc 100%);
+            border-radius: 24px;
+            padding: 50px 60px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: bold;
-            margin: 0 auto;
+            gap: 50px;
+            position: relative;
+            margin-bottom: 60px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+        }
+
+        .profile-image-container {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 8px solid #fff;
+            overflow: hidden;
+            background: #eee;
+            flex-shrink: 0;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        .profile-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .welcome-text h2 {
+            font-size: 48px;
+            font-weight: 700;
+            color: #1a1a1a;
+            line-height: 1.1;
+            letter-spacing: -1px;
+        }
+
+        .edit-btn {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            padding: 10px 35px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #555;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        }
+
+        .edit-btn:hover {
+            background: #f9f9f9;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+        }
+
+        .profile-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px 60px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #999;
+            text-transform: none;
+            letter-spacing: 0.2px;
+        }
+
+        .form-control {
+            background: #fff;
+            border: 1px solid #f2f2f2;
+            padding: 18px 24px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            outline: none;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.01);
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            border-color: #e0e0e0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
         }
 
         .form-control[readonly] {
-            background-color: #e9ecef; /* Warna latar input readonly */
-            opacity: 1;
             cursor: default;
+        }
+
+        @media (max-width: 1200px) {
+            .profile-form {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
         }
     </style>
 @stop
 
+@section('content')
+    <h1 class="page-title">Profil Admin</h1>
+
+    <div class="profile-card">
+        <div class="profile-image-container">
+            <img src="{{ asset('assets/images/admin-avatar.png') }}" alt="Admin Profile">
+        </div>
+        <div class="welcome-text">
+            <h2>Selamat Datang,<br>{{ Auth::user()->username }}</h2>
+        </div>
+        <button class="edit-btn">Ubah</button>
+    </div>
+
+    <div class="profile-form">
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" class="form-control" value="{{ Auth::user()->username }}" readonly>
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="text" class="form-control" value="{{ Auth::user()->email }}" readonly>
+        </div>
+        <div class="form-group">
+            <label>Nama Admin</label>
+            <input type="text" class="form-control" value="Rahmad Hadi" readonly>
+        </div>
+        <div class="form-group">
+            <label>Nomor</label>
+            <input type="text" class="form-control" value="0820-5215-xxxx" readonly>
+        </div>
+        <div class="form-group">
+            <label>Status Admin</label>
+            <input type="text" class="form-control" value="{{ Auth::user()->role == 'admin_utama' ? 'Admin Utama' : 'Admin' }}" readonly>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" class="form-control" value="************" readonly>
+        </div>
+    </div>
+@stop
+
 @section('js')
-    {{-- JavaScript Anda bisa diletakkan di sini jika perlu --}}
+    <script>
+        // Any specific JS if needed
+    </script>
 @stop
