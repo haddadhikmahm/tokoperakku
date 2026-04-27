@@ -15,6 +15,7 @@ class Pengerajin extends Model
         'telp_pengerajin',
         'email_pengerajin',
         'alamat_pengerajin',
+        'foto_pengerajin',
     ];
 
     public function usahaPengerajin()

@@ -1,125 +1,260 @@
-@extends('adminlte::page')
+@extends('layouts.admin_premium')
 
-@section('title', 'Create Data Pengrajin')
+@section('title', 'Tambah Pengrajin')
 
-@section('content_header')
-    <h1>Create Data Pengrajin</h1>
+@section('css')
+<style>
+    .form-container {
+        background: #fff;
+        padding: 0;
+        border-radius: 12px;
+    }
+
+    .form-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 30px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #666;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #1a1a1a;
+        outline: none;
+        transition: border-color 0.2s;
+        background-color: #fff;
+    }
+
+    .form-input:focus {
+        border-color: #991b1b;
+    }
+
+    .form-input:disabled, .form-input[readonly] {
+        background-color: #f3f4f6;
+        color: #9ca3af;
+    }
+
+    .photo-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .photo-preview {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        border: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background-color: #fff;
+    }
+
+    .photo-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .btn-change-photo {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #666;
+        cursor: pointer;
+    }
+
+    .btn-submit {
+        background: #991b1b;
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-cancel {
+        background: #fff;
+        color: #666;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .usaha-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        min-height: 50px;
+    }
+
+    .usaha-tag {
+        background: #e5e7eb;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        color: #4b5563;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .usaha-tag .remove {
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .row {
+        display: flex;
+        gap: 40px;
+    }
+
+    .col-form {
+        flex: 1;
+    }
+
+    .col-photo {
+        width: 250px;
+        flex-shrink: 0;
+    }
+
+    .footer-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 40px;
+    }
+</style>
 @stop
 
 @section('content')
-    <div class="container">
-        <form action="{{ route('admin.pengerajin-store') }}" method="POST" id="createPengerajinForm">
-            @csrf
-            <!-- Kode Pengerajin -->
-            <div class="form-group">
-                <label for="kode_pengerajin">Kode Pengerajin</label>
-                <input type="text" class="form-control" id="kode_pengerajin" name="kode_pengerajin"
-                    placeholder="Masukkan Kode Pengerajin" required>
-            </div>
+<div class="form-container">
+    <h2 class="form-title">Tambah Pengrajin</h2>
 
-            <!-- Nama Pengerajin -->
-            <div class="mb-3">
-                <label for="nama_pengerajin" class="form-label">Nama Pengerajin</label>
-                <input type="text" class="form-control" id="nama_pengerajin" name="nama_pengerajin"
-                    placeholder="Masukkan Nama Pengerajin" required>
-            </div>
-
-            <!-- Jenis Kelamin -->
-            <div class="mb-3">
-                <label class="form-label d-block">Jenis Kelamin</label>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="jk_pengerajin" id="jk_pria" value="P"
-                        required>
-                    <label class="form-check-label" for="jk_pria">Pria</label>
+    <form action="{{ route('admin.pengerajin-store') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <div class="row">
+            <!-- Left Column -->
+            <div class="col-form">
+                <div class="form-group">
+                    <label class="form-label">Kode Pengrajin</label>
+                    <input type="text" name="kode_pengerajin" class="form-input" value="{{ $autoKode }}" readonly>
                 </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="jk_pengerajin" id="jk_wanita" value="W"
-                        required>
-                    <label class="form-check-label" for="jk_wanita">Wanita</label>
+
+                <div class="form-group">
+                    <label class="form-label">Nama</label>
+                    <input type="text" name="nama_pengerajin" class="form-input" placeholder="Masukkan Nama" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">No Handphone</label>
+                    <input type="text" name="telp_pengerajin" class="form-input" placeholder="Masukkan No Handphone" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email_pengerajin" class="form-input" placeholder="Masukkan Email" required>
                 </div>
             </div>
 
-            <!-- Usia -->
-            <div class="mb-3">
-                <label for="usia_pengerajin" class="form-label">Usia</label>
-                <input type="number" class="form-control" id="usia_pengerajin" name="usia_pengerajin"
-                    placeholder="Masukkan Usia Pengerajin" required>
+            <!-- Middle Column -->
+            <div class="col-form">
+                <div class="form-group">
+                    <label class="form-label">Gender</label>
+                    <select name="jk_pengerajin" class="form-input" required>
+                        <option value="" disabled selected>Pilih Gender</option>
+                        <option value="P">Pria</option>
+                        <option value="W">Wanita</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Usia</label>
+                    <input type="number" name="usia_pengerajin" class="form-input" placeholder="Masukkan Usia" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Alamat</label>
+                    <textarea name="alamat_pengerajin" class="form-input" rows="4" placeholder="Masukkan Alamat" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Usaha</label>
+                    <select name="usaha_ids[]" class="form-input" multiple style="height: 100px;">
+                        @foreach($usahas as $usaha)
+                            <option value="{{ $usaha->id }}">{{ $usaha->nama_usaha }}</option>
+                        @endforeach
+                    </select>
+                    <p style="font-size: 11px; color: #888; margin-top: 5px;">* Tahan Ctrl untuk memilih lebih dari satu</p>
+                </div>
             </div>
 
-            <!-- No Telepon -->
-            <div class="mb-3">
-                <label for="telp_pengerajin" class="form-label">No Telepon</label>
-                <input type="text" class="form-control" id="telp_pengerajin" name="telp_pengerajin"
-                    placeholder="Masukkan No Telepon Pengerajin" required>
+            <!-- Right Column (Photo) -->
+            <div class="col-photo">
+                <div class="photo-section">
+                    <div class="photo-preview" id="photoPreview">
+                        <i class="fas fa-user" style="font-size: 60px; color: #e5e7eb;"></i>
+                    </div>
+                    <label class="btn-change-photo">
+                        Ubah Foto
+                        <input type="file" name="foto_pengerajin" id="photoInput" style="display: none;" accept="image/*">
+                    </label>
+                </div>
             </div>
+        </div>
 
-            <!-- Email -->
-            <div class="mb-3">
-                <label for="email_pengerajin" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email_pengerajin" name="email_pengerajin"
-                    placeholder="Masukkan Email Pengerajin" required>
-            </div>
-
-            <!-- Alamat -->
-            <div class="mb-3">
-                <label for="alamat_pengerajin" class="form-label">Alamat</label>
-                <textarea class="form-control" id="alamat_pengerajin" name="alamat_pengerajin" rows="3"
-                    placeholder="Masukkan Alamat Pengerajin" required></textarea>
-            </div>
-
-            <!-- Tombol Submit -->
-            <button type="submit" class="btn btn-primary">Simpan Data</button>
-            <a href="{{ route('admin.pengerajin-index') }}" class="btn btn-secondary">Batal</a>
-        </form>
-    </div>
-@stop
-
-@section('css')
-    <!-- Custom CSS jika diperlukan -->
-    <link rel="stylesheet" href="/css/custom.css">
+        <div class="footer-actions">
+            <button type="submit" class="btn-submit">Tambah Pengrajin</button>
+            <a href="{{ route('admin.pengerajin-index') }}" class="btn-cancel">Batal</a>
+        </div>
+    </form>
+</div>
 @stop
 
 @section('js')
-    <!-- Validasi form sederhana dengan JavaScript -->
-    <script>
-        document.getElementById('createPengerajinForm').addEventListener('submit', function(e) {
-            const nama = document.getElementById('nama_pengerajin').value.trim();
-            if (!nama) {
-                alert('Nama Pengerajin tidak boleh kosong!');
-                e.preventDefault();
-                return false;
-            }
-            const usia = document.getElementById('usia_pengerajin').value;
-            if (usia < 0) {
-                alert('Usia tidak boleh negatif!');
-                e.preventDefault();
-                return false;
-            }
-            const telp = document.getElementById('telp_pengerajin').value.trim();
-            if (!telp) {
-                alert('No Telepon tidak boleh kosong!');
-                e.preventDefault();
-                return false;
-            }
-            if (telp.length < 10) {
-                alert('No Telepon harus lebih dari 10 digit!');
-                e.preventDefault();
-                return false;
-            }
-            const email = document.getElementById('email_pengerajin').value.trim();
-            if (!email) {
-                alert('Email tidak boleh kosong!');
-                e.preventDefault();
-                return false;
-            }
-            const alamat = document.getElementById('alamat_pengerajin').value.trim();
-            if (!alamat) {
-                alert('Alamat tidak boleh kosong!');
-                e.preventDefault();
-                return false;
-            }
-        });
-
-        console.log("Form Create Pengerajin loaded");
-    </script>
+<script>
+    document.getElementById('photoInput').addEventListener('change', function(e) {
+        const preview = document.getElementById('photoPreview');
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
 @stop
+

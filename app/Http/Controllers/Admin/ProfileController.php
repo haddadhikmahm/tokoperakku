@@ -9,18 +9,44 @@ class ProfileController extends Controller
 {
     public function index()
     {
-        return view('admin.profile.profile');
+        $user = auth()->user();
+        return view('admin.profile.profile', compact('user'));
     }
 
     public function edit()
     {
-        return view('admin.profile.edit-profile');
+        $user = auth()->user();
+        return view('admin.profile.edit-profile', compact('user'));
     }
 
     public function update(Request $request)
     {
-        // Logic to update the profile
-        return redirect()->route('admin.profile-index')
-            ->with('success', 'Profile berhasil diperbarui.');
+        $user = auth()->user();
+        
+        $request->validate([
+            'nama' => 'nullable|string|max:255',
+            'no_hp' => 'nullable|string|max:20',
+            'gender' => 'nullable|in:Pria,Wanita',
+            'usia' => 'nullable|integer',
+            'alamat' => 'nullable|string',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $data = $request->only(['nama', 'no_hp', 'gender', 'usia', 'alamat', 'email']);
+
+        if ($request->hasFile('foto')) {
+            // Delete old photo if exists
+            if ($user->foto && file_exists(public_path('storage/' . $user->foto))) {
+                unlink(public_path('storage/' . $user->foto));
+            }
+            $path = $request->file('foto')->store('profile_photos', 'public');
+            $data['foto'] = $path;
+        }
+
+        $user->update($data);
+
+        return redirect()->route('profile')
+            ->with('success', 'Profil berhasil diperbarui.');
     }
 }

@@ -14,8 +14,10 @@ use App\Http\Controllers\Admin\JenisUsahaController;
 use App\Http\Controllers\Admin\UsahaPengerajinController;
 use App\Http\Controllers\Admin\UsahaJenisController;
 use App\Http\Controllers\Admin\UsahaProdukController;
+use App\Http\Controllers\Admin\AdminManageController;
 use App\Http\Controllers\Guest\PageController;
 use App\Http\Controllers\Admin\ExportController;
+use App\Http\Controllers\Admin\PelaporanController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ReviewController;
 
@@ -38,7 +40,9 @@ Route::get('produk/{slug}', [PageController::class, 'singleProduct'])->name('gue
 // Dynamic Middleware for all logged in users (Auth)
 Route::middleware(['auth'])->group(function () {
     Route::match(['get', 'post'], 'logout', [AuthController::class, 'logout'])->name('logout');
-    Route::get('admin/profile', [AuthController::class, 'profile'])->name('profile');
+    Route::get('admin/profile', [ProfileController::class, 'index'])->name('profile');
+    Route::get('admin/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('admin/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('admin/change-password', [AuthController::class, 'changePassword'])->name('change-password');
     Route::post('update-password', [AuthController::class, 'updatePassword'])->name('update-password');
     
@@ -62,6 +66,15 @@ Route::middleware(['role:admin_utama,admin_wilayah,umkm'])->group(function () {
     // Export / Pelaporan
     Route::get('admin/export-data', [ExportController::class, 'index'])->name('admin.export-data');
     Route::get('admin/export-pengerajin', [ExportController::class, 'exportPengerajin'])->name('admin.export-pengerajin');
+
+    // Pelaporan CRUD
+    Route::get('admin/pelaporan', [PelaporanController::class, 'index'])->name('admin.pelaporan-index');
+    Route::get('admin/pelaporan/create', [PelaporanController::class, 'create'])->name('admin.pelaporan-create');
+    Route::post('admin/pelaporan/store', [PelaporanController::class, 'store'])->name('admin.pelaporan-store');
+    Route::get('admin/pelaporan/edit/{id}', [PelaporanController::class, 'edit'])->name('admin.pelaporan-edit');
+    Route::put('admin/pelaporan/update/{id}', [PelaporanController::class, 'update'])->name('admin.pelaporan-update');
+    Route::delete('admin/pelaporan/destroy/{id}', [PelaporanController::class, 'destroy'])->name('admin.pelaporan-destroy');
+    Route::get('admin/pelaporan/chart', [PelaporanController::class, 'chart'])->name('admin.pelaporan-chart');
 });
 
 // Admin only routes
@@ -132,6 +145,16 @@ Route::middleware(['role:admin_utama,admin_wilayah'])->group(function () {
     Route::get('admin/usaha-produk/edit/{id}', [UsahaProdukController::class, 'edit'])->name('admin.usaha_produk-edit');
     Route::put('admin/usaha-produk/update/{id}', [UsahaProdukController::class, 'update'])->name('admin.usaha_produk-update');
     Route::delete('admin/usaha-produk/destroy/{id}', [UsahaProdukController::class, 'destroy'])->name('admin.usaha_produk-destroy');
+
+    // Admin Management
+    Route::resource('admin/manage', AdminManageController::class)->names([
+        'index' => 'admin.manage.index',
+        'create' => 'admin.manage.create',
+        'store' => 'admin.manage.store',
+        'edit' => 'admin.manage.edit',
+        'update' => 'admin.manage.update',
+        'destroy' => 'admin.manage.destroy',
+    ]);
 });
 
 // UMKM Routes

@@ -6,13 +6,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Produk;
 use App\Models\KategoriProduk;
+use App\Models\Usaha;
+use App\Models\FotoProduk;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class ProdukController extends Controller
 {
     public function index()
     {
-        $dataProduk = Produk::all(); // atau bisa juga pakai paginate()
+        $dataProduk = Produk::with(['kategoriProduk', 'usaha', 'fotoProduk'])->get();
 
         return view('admin.produk.index-produk', [
             'produks' => $dataProduk
@@ -21,38 +24,57 @@ class ProdukController extends Controller
 
     public function create()
     {
-        // Ambil data kategori produk dari database
         $kategoriProduks = KategoriProduk::all();
-        // Kirim data kategori produk ke view
-        return view('admin.produk.create-produk', [
-            'kategoriProduks' => $kategoriProduks
-        ]);
+        $usahas = Usaha::all();
+        
+        $lastProduk = Produk::orderBy('id', 'desc')->first();
+        $nextId = $lastProduk ? $lastProduk->id + 1 : 1;
+        $autoKode = 'PRD' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+
+        return view('admin.produk.create-produk', compact('kategoriProduks', 'usahas', 'autoKode'));
     }
 
     public function edit($id)
     {
         $kategoriProduks = KategoriProduk::all();
-        $produk = Produk::findOrFail($id);
-        // Kirim data produk dan kategori produk ke view
-        return view('admin.produk.edit-produk', [
-            'kategoriProduks' => $kategoriProduks,
-            'produk' => $produk
-        ]);
+        $usahas = Usaha::all();
+        $produk = Produk::with(['fotoProduk', 'usaha'])->findOrFail($id);
+        return view('admin.produk.edit-produk', compact('kategoriProduks', 'usahas', 'produk'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'kode_produk' => 'required|string',
+            'kode_produk' => 'required|string|unique:produk',
             'kategori_produk_id' => 'required|exists:kategori_produk,id',
             'nama_produk' => 'required|string',
             'deskripsi' => 'required|string',
-            'harga' => 'required|integer',
-            'stok' => 'required|integer',
+            'harga' => 'required|numeric',
+            'stok' => 'nullable|integer',
+            'usaha_id' => 'required|exists:usaha,id',
+            'foto_produk.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Simpan data produk ke database
-        Produk::create($request->all());
+        $produk = Produk::create($request->only([
+            'kode_produk', 'kategori_produk_id', 'nama_produk', 'deskripsi', 'harga', 'stok'
+        ]));
+
+        // Sync with Usaha
+        $produk->usaha()->sync($request->usaha_id);
+
+        // Handle Gallery Photos
+        if ($request->hasFile('foto_produk')) {
+            foreach ($request->file('foto_produk') as $file) {
+                $name = time() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('foto_produk', $name, 'public');
+                
+                FotoProduk::create([
+                    'produk_id' => $produk->id,
+                    'file_foto_produk' => $path,
+                    'kode_foto_produk' => 'IMG-' . Str::upper(Str::random(8))
+                ]);
+            }
+        }
 
         return redirect()->route('admin.produk-index')
             ->with('success', 'Produk berhasil ditambahkan.');
@@ -60,20 +82,41 @@ class ProdukController extends Controller
 
     public function update(Request $request, $id)
     {
-        $data = $request->validate([
-            'kode_produk' => 'required|string',
+        $produk = Produk::findOrFail($id);
+
+        $request->validate([
+            'kode_produk' => 'required|string|unique:produk,kode_produk,' . $id,
             'kategori_produk_id' => 'required|exists:kategori_produk,id',
             'nama_produk' => 'required|string',
             'deskripsi' => 'required|string',
-            'harga' => 'required|integer',
-            'stok' => 'required|integer',
+            'harga' => 'required|numeric',
+            'stok' => 'nullable|integer',
+            'usaha_id' => 'required|exists:usaha,id',
+            'foto_produk.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Generate slug dari nama kategori
-        $data['slug'] = Str::slug($data['nama_produk']);
+        $produk->update($request->only([
+            'kode_produk', 'kategori_produk_id', 'nama_produk', 'deskripsi', 'harga', 'stok'
+        ]));
 
-        // Update data produk di database
-        Produk::where('id', $id)->update($data);
+        // Sync with Usaha
+        $produk->usaha()->sync($request->usaha_id);
+
+        // Handle Gallery Photos
+        if ($request->hasFile('foto_produk')) {
+            // Delete old photos if needed? Usually we keep them and allow adding more or specific deletions.
+            // But based on the UI "+" button, it looks like adding more.
+            foreach ($request->file('foto_produk') as $file) {
+                $name = time() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('foto_produk', $name, 'public');
+                
+                FotoProduk::create([
+                    'produk_id' => $produk->id,
+                    'file_foto_produk' => $path,
+                    'kode_foto_produk' => 'IMG-' . Str::upper(Str::random(8))
+                ]);
+            }
+        }
 
         return redirect()->route('admin.produk-index')
             ->with('success', 'Data Produk berhasil diupdate.');
@@ -81,7 +124,14 @@ class ProdukController extends Controller
 
     public function destroy($id)
     {
-        $produk = Produk::findOrFail($id);
+        $produk = Produk::with('fotoProduk')->findOrFail($id);
+        
+        foreach ($produk->fotoProduk as $foto) {
+            Storage::disk('public')->delete($foto->file_foto_produk);
+            $foto->delete();
+        }
+
+        $produk->usaha()->detach();
         $produk->delete();
 
         return redirect()->route('admin.produk-index')

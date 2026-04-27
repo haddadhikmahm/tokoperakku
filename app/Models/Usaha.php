@@ -18,6 +18,15 @@ class Usaha extends Model
         'status_usaha',
         'user_id',
         'wilayah_id',
+        'link_website_usaha',
+        'link_wa_usaha',
+        'link_tokopedia_usaha',
+        'link_shopee_usaha',
+        'link_instagram_usaha',
+        'link_tiktok_usaha',
+        'link_facebook_usaha',
+        'spesialisasi_usaha',
+        'foto_tempat',
     ];
 
     // public function usahaJenis()

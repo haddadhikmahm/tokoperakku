@@ -1,37 +1,71 @@
-@extends('adminlte::page')
+@extends('layouts.admin_premium')
 
-@section('title', 'Foto Produk')
+@section('title', 'Pelaporan & Export')
 
-@section('content_header')
-    <h1
-        style="
-            font-size: 2rem;
-            font-weight: bold;
-            color: #343a40;
-            text-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 1px;
-        ">
-        <i class="fas fa-file-export"></i> Export Data
-    </h1>
+@section('css')
+<style>
+    .manage-header {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        margin-bottom: 40px !important;
+        padding-top: 10px !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .manage-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    .export-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 40px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        border: 1px solid #f3f4f6;
+    }
+
+    .btn-export {
+        background: #10b981;
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.2s;
+    }
+
+    .btn-export:hover {
+        background: #059669;
+        transform: translateY(-1px);
+    }
+</style>
 @stop
 
 @section('content')
-    <a href="{{ route('admin.export-pengerajin') }}" class="btn btn-success btn-sm">
-        <i class="fas fa-file-excel"></i> Export Data Pengerajin</a>
-    {{-- tambah jarak dan garis --}}
-    <br>
-    {{-- tambah jarak dan garis --}}
-    <hr color="#ccc">
-@stop
+<div class="manage-header">
+    <h2 class="manage-title">Pelaporan & Export</h2>
+</div>
 
-@section('css')
-    {{-- <link rel="stylesheet" href="/css/custom.css"> --}}
+<div class="export-card">
+    <h3 style="font-size: 18px; margin-bottom: 20px; color: #374151;">Download Data dalam format Excel</h3>
+    <a href="{{ route('admin.export-pengerajin') }}" class="btn-export">
+        <i class="fas fa-file-excel"></i> Export Data Pengerajin
+    </a>
+</div>
 @stop
 
 @section('js')
-    {{-- <script src="/js/custom.js"></script> --}}
-
 @stop

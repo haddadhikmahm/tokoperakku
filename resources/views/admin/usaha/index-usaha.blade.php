@@ -1,206 +1,345 @@
-@extends('adminlte::page')
+@extends('layouts.admin_premium')
 
-@section('title', 'Usaha')
+@section('title', 'Data Usaha')
 
-@section('content_header')
-    <h1
-        style="
-    font-size: 2rem;
-    font-weight: bold;
-    color: #343a40;
-    text-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-">
-        <i class="fas fa-store"></i> Data Usaha
-    </h1>
+@section('css')
+<style>
+    .manage-header {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        margin-bottom: 40px !important;
+        padding-top: 10px !important;
+        flex-wrap: nowrap !important;
+    }
 
+    .manage-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    .manage-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-left: auto;
+    }
+
+    .btn-add {
+        background: #991b1b;
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 45px;
+    }
+
+    .search-container {
+        position: relative;
+    }
+
+    .search-input {
+        padding: 0 15px 0 45px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        font-size: 14px;
+        width: 320px;
+        height: 45px;
+        outline: none;
+        background-color: #fcfcfc;
+        color: #666;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 16px;
+    }
+
+    .admin-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-top: 10px;
+    }
+
+    .admin-table th {
+        text-align: left;
+        padding: 12px 20px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #888;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .admin-table td {
+        padding: 18px 20px;
+        font-size: 14px;
+        color: #4b5563;
+        border-bottom: 1px solid #f9fafb;
+        vertical-align: middle;
+    }
+
+    .admin-table tr:hover td {
+        background-color: #fcfcfc;
+    }
+
+    .action-btn {
+        background: none;
+        border: none;
+        color: #9ca3af;
+        cursor: pointer;
+        font-size: 20px;
+        padding: 0;
+        letter-spacing: 1px;
+    }
+
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        background-color: #fff;
+        min-width: 120px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1);
+        z-index: 10;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .dropdown-content a, .dropdown-content button {
+        color: #333;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        font-size: 13px;
+        text-align: left;
+        width: 100%;
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .dropdown-content a:hover, .dropdown-content button:hover {
+        background-color: #f5f5f5;
+    }
+
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 40px;
+        padding-bottom: 20px;
+    }
+
+    .results-text {
+        font-size: 13px;
+        color: #6b7280;
+        font-weight: 500;
+    }
+
+    /* DataTables Overrides */
+    .dataTables_empty {
+        text-align: center !important;
+        padding: 40px !important;
+        color: #9ca3af !important;
+        font-style: italic;
+    }
+
+    .dataTables_info {
+        display: none !important;
+    }
+
+    .dataTables_paginate {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .paginate_button {
+        width: 36px;
+        height: 36px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #6b7280 !important;
+        text-decoration: none !important;
+        transition: all 0.2s;
+        cursor: pointer;
+        background: transparent !important;
+        border: none !important;
+    }
+
+    .paginate_button:hover:not(.disabled):not(.current) {
+        background-color: #f3f4f6 !important;
+    }
+
+    .paginate_button.current {
+        background-color: #991b1b !important;
+        color: #ffffff !important;
+    }
+
+    .paginate_button.disabled {
+        color: #d1d5db !important;
+        cursor: default;
+    }
+
+    .paginate_button.previous, .paginate_button.next {
+        color: #9ca3af !important;
+    }
+
+    .badge {
+        font-size: 12px;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+
+    .bg-success { background-color: #d1fae5; color: #065f46; }
+    .bg-secondary { background-color: #f3f4f6; color: #374151; }
+    .bg-danger { background-color: #fee2e2; color: #991b1b; }
+    .bg-warning { background-color: #fef3c7; color: #92400e; }
+    .bg-info { background-color: #e0f2fe; color: #075985; }
+
+    .gmap-link {
+        display: inline-block;
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #2563eb;
+        text-decoration: none;
+    }
+</style>
 @stop
 
 @section('content')
-    <a href="{{ route('admin.usaha-create') }}" class="btn btn-success btn-sm">
-        <i class="fas fa-add"></i> Tambah Usaha
-    </a>
-    {{-- tambahkan jarak --}}
-    <br>
-    {{-- tambahkan garis lurus --}}
-    <hr color="#ccc">
+<div class="manage-header">
+    <h2 class="manage-title">Usaha</h2>
+    <div class="manage-actions">
+        <a href="{{ route('admin.usaha-create') }}" class="btn-add">Tambah Usaha</a>
+        <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="custom-search" class="search-input" placeholder="Search products">
+        </div>
+    </div>
+</div>
 
-    {{-- Tabel --}}
-    <table id="usaha-table" class="display" style="width:100%">
-        <thead>
+<table id="usaha-table" class="admin-table">
+    <thead>
+        <tr>
+            <th style="width: 80px;"></th>
+            <th>Nama Usaha</th>
+            <th>Kode</th>
+            <th>No Telepon</th>
+            <th>Email</th>
+            <th>Wilayah</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($usahas as $usaha)
             <tr>
-                <th>Kode Usaha</th>
-                <th>Nama Usaha</th>
-                <th>No Telepon</th>
-                <th>Email</th>
-                <th>Deskripsi</th>
-                <th>Foto</th>
-                <th>Link Gmap</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($usahas as $usaha)
-                <tr>
-                    <td>{{ $usaha->kode_usaha }}</td>
-                    <td>{{ $usaha->nama_usaha }}</td>
-                    <td>{{ $usaha->telp_usaha }}</td>
-                    <td>{{ $usaha->email_usaha }}</td>
-                    <td>{{ $usaha->deskripsi_usaha }}</td>
-                    <td>
+                <td>
+                    <div style="width: 48px; height: 48px; border-radius: 8px; overflow: hidden; background: #f3f4f6;">
                         @if ($usaha->foto_usaha)
-                            <img src="{{ asset('storage/' . $usaha->foto_usaha) }}" alt="Foto Usaha"
-                                style="width: 50px; height: auto;">
+                            <img src="{{ asset('storage/' . $usaha->foto_usaha) }}" alt="Foto Usaha" style="width: 100%; height: 100%; object-fit: cover;">
                         @else
-                            No Image
+                            <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">
+                                <i class="fas fa-image"></i>
+                            </div>
                         @endif
-                    </td>
-                    <td>
-                        <a href="{{ $usaha->link_gmap_usaha }}" class="gmap-link" target="_blank">
-                            {{ $usaha->link_gmap_usaha }}
-                        </a>
-                    </td>
-                    <td>
-                        @if ($usaha->status_usaha == 'aktif')
-                            <span class="badge bg-success">Aktif</span>
-                        @elseif($usaha->status_usaha == 'nonaktif')
-                            <span class="badge bg-secondary">Tidak Aktif</span>
-                        @elseif($usaha->status_usaha == 'tutup')
-                            <span class="badge bg-danger">Tutup</span>
-                        @elseif($usaha->status_usaha == 'pending')
-                            <span class="badge bg-warning">Pending</span>
-                        @elseif($usaha->status_usaha == 'dibekukan')
-                            <span class="badge bg-info">Dibekukan</span>
-                        @else
-                            <span class="badge bg-dark">Unknown</span> <!-- kalau status tidak dikenali -->
-                        @endif
-                    </td>
-                    <td>
-                        <a href="{{ route('admin.usaha-edit', $usaha->id) }}" class="btn btn-warning btn-sm">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                        <form action="{{ route('admin.usaha-destroy', $usaha->id) }}" method="POST"
-                            style="display:inline;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-sm" title="Hapus Usaha"
-                                onclick="return confirm('Anda yakin ingin menghapus?')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
+                    </div>
+                </td>
+                <td style="font-weight: 600; color: #1a1a1a;">{{ $usaha->nama_usaha }}</td>
+                <td>{{ $usaha->kode_usaha }}</td>
+                <td>{{ $usaha->telp_usaha }}</td>
+                <td>{{ $usaha->email_usaha }}</td>
+                <td>{{ $usaha->wilayah->nama_wilayah ?? '-' }}</td>
+                <td>
+                    <div class="dropdown">
+                        <button class="action-btn">•••</button>
+                        <div class="dropdown-content">
+                            <a href="{{ route('admin.usaha-edit', $usaha->id) }}"><i class="fas fa-edit"></i> Edit</a>
+                            <form action="{{ route('admin.usaha-destroy', $usaha->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus usaha ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" style="color: #dc2626;"><i class="fas fa-trash"></i> Hapus</button>
+                            </form>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        @endforeach
+    </tbody>
+</table>
 
-    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-        @csrf
-    </form>
-@stop
-
-@section('css')
-    {{-- <link rel="stylesheet" href="/css/custom.css"> --}}
-
-    {{-- ini buat datatbales --}}
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-
-    {{-- ini soruce icon button --}}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-
-    {{-- ini buat styling link gmap --}}
-    <style>
-        .gmap-link {
-            display: inline-block;
-            max-width: 200px;
-            /* Bebas, mau 150px, 200px, dll */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            vertical-align: middle;
-        }
-    </style>
-
-    {{-- ini buat styling badge --}}
-    <style>
-        .badge {
-            font-size: 0.8rem;
-            padding: 0.5em 0.75em;
-            border-radius: 0.5rem;
-        }
-
-        .badge.bg-success {
-            background-color: #3bb357;
-        }
-
-        .badge.bg-secondary {
-            background-color: #6c757d;
-        }
-
-        .badge.bg-danger {
-            background-color: #dc3545;
-        }
-
-        .badge.bg-warning {
-            background-color: #ffc107;
-        }
-
-        .badge.bg-info {
-            background-color: #17a2b8;
-        }
-
-        .badge.bg-dark {
-            background-color: #343a40;
-        }
-    </style>
+<div class="pagination-container">
+    <div class="results-text">Showing 1-{{ count($usahas) }} Of {{ count($usahas) }} Results.</div>
+</div>
 @stop
 
 @section('js')
-    {{-- <script src="/js/custom.js"></script> --}}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script>
+    $(document).ready(function() {
+        const table = $('#usaha-table').DataTable({
+            paging: true,
+            searching: true,
+            info: true,
+            dom: 'tp',
+            language: {
+                paginate: {
+                    previous: '<i class="fas fa-chevron-left"></i>',
+                    next: '<i class="fas fa-chevron-right"></i>'
+                }
+            },
+            drawCallback: function(settings) {
+                const api = this.api();
+                const info = api.page.info();
+                
+                let resultsText = '';
+                if (info.recordsTotal > 0) {
+                    resultsText = `Showing ${info.start + 1}-${info.end} Of ${info.recordsTotal} Results.`;
+                } else {
+                    resultsText = 'Showing 0-0 Of 0 Results.';
+                }
+                $('.results-text').html(resultsText);
 
-    {{-- ini buat datatbales --}}
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('#usaha-table').DataTable({
-                scrollX: true, // 👉 Aktifkan horizontal scroll
-                paging: true, // 👉 Aktifkan paging
-                searching: true, // 👉 Aktifkan search box
-                info: true, // 👉 Aktifkan info "Showing 1 to 10 of 50 entries"
-                stateSave: true, // 👉 Aktifkan state saving (ingat posisi sort/page)
-                order: [
-                    [1, 'asc']
-                ], // 👉 Default sorting berdasarkan Nama Usaha ASC
-                columnDefs: [{
-                        orderable: false,
-                        targets: [5, 8]
-                    }, // 👉 Kolom Foto dan Actions tidak bisa sort
-                    {
-                        width: '100px',
-                        targets: 5
-                    } // 👉 Kolom Foto kecil
-                ]
-            });
-        });
-    </script>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const logoutBtn = document.getElementById('logout-button');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    document.getElementById('logout-form').submit();
-                });
+                $('#usaha-table_paginate').appendTo('.pagination-container');
             }
         });
-    </script>
+
+        $('#custom-search').on('keyup', function() {
+            table.search(this.value).draw();
+        });
+    });
+</script>
 @stop
