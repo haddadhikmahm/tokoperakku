@@ -10,12 +10,22 @@ class ProfileController extends Controller
     public function index()
     {
         $user = auth()->user();
+        
+        if ($user->role == 'user' || $user->role == 'umkm') {
+            return view('user.profile', compact('user'))->with('layout', $user->role == 'umkm' ? 'layouts.umkm' : 'layouts.user');
+        }
+
         return view('admin.profile.profile', compact('user'));
     }
 
     public function edit()
     {
         $user = auth()->user();
+        
+        if ($user->role == 'umkm' || $user->role == 'user') {
+            return view('user.edit-profile', compact('user'))->with('layout', $user->role == 'umkm' ? 'layouts.umkm' : 'layouts.user');
+        }
+
         return view('admin.profile.edit-profile', compact('user'));
     }
 
@@ -46,7 +56,11 @@ class ProfileController extends Controller
 
         $user->update($data);
 
-        return redirect()->route('profile')
+        $route = 'admin.profile';
+        if ($user->role == 'umkm') $route = 'umkm.profile';
+        if ($user->role == 'user') $route = 'user.profile';
+
+        return redirect()->route($route)
             ->with('success', 'Profil berhasil diperbarui.');
     }
 }

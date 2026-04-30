@@ -18,7 +18,8 @@ class ProdukController extends Controller
         $dataProduk = Produk::with(['kategoriProduk', 'usaha', 'fotoProduk'])->get();
 
         return view('admin.produk.index-produk', [
-            'produks' => $dataProduk
+            'produks' => $dataProduk,
+            'layout' => auth()->user()->role == 'umkm' ? 'layouts.umkm' : 'layouts.admin_premium'
         ]);
     }
 
@@ -31,7 +32,8 @@ class ProdukController extends Controller
         $nextId = $lastProduk ? $lastProduk->id + 1 : 1;
         $autoKode = 'PRD' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
 
-        return view('admin.produk.create-produk', compact('kategoriProduks', 'usahas', 'autoKode'));
+        $layout = auth()->user()->role == 'umkm' ? 'layouts.umkm' : 'layouts.admin_premium';
+        return view('admin.produk.create-produk', compact('kategoriProduks', 'usahas', 'autoKode', 'layout'));
     }
 
     public function edit($id)
@@ -39,7 +41,8 @@ class ProdukController extends Controller
         $kategoriProduks = KategoriProduk::all();
         $usahas = Usaha::all();
         $produk = Produk::with(['fotoProduk', 'usaha'])->findOrFail($id);
-        return view('admin.produk.edit-produk', compact('kategoriProduks', 'usahas', 'produk'));
+        $layout = auth()->user()->role == 'umkm' ? 'layouts.umkm' : 'layouts.admin_premium';
+        return view('admin.produk.edit-produk', compact('kategoriProduks', 'usahas', 'produk', 'layout'));
     }
 
     public function store(Request $request)

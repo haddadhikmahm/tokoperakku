@@ -40,12 +40,47 @@ Route::get('produk/{slug}', [PageController::class, 'singleProduct'])->name('gue
 // Dynamic Middleware for all logged in users (Auth)
 Route::middleware(['auth'])->group(function () {
     Route::match(['get', 'post'], 'logout', [AuthController::class, 'logout'])->name('logout');
-    Route::get('admin/profile', [ProfileController::class, 'index'])->name('profile');
-    Route::get('admin/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::put('admin/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('admin/profile', [ProfileController::class, 'index'])->name('admin.profile');
+    Route::get('umkm/profile', [ProfileController::class, 'index'])->name('umkm.profile');
+    Route::get('user/profile', [ProfileController::class, 'index'])->name('user.profile');
+    
+    Route::get('profile', function() {
+        $role = auth()->user()->role;
+        if ($role == 'umkm') return redirect()->route('umkm.profile');
+        if ($role == 'user') return redirect()->route('user.profile');
+        return redirect()->route('admin.profile');
+    })->name('profile');
+
+    Route::get('admin/profile/edit', [ProfileController::class, 'edit'])->name('admin.profile.edit');
+    Route::get('umkm/profile/edit', [ProfileController::class, 'edit'])->name('umkm.profile.edit');
+    Route::get('user/profile/edit', [ProfileController::class, 'edit'])->name('user.profile.edit');
+
+    Route::get('profile/edit', function() {
+        $role = auth()->user()->role;
+        if ($role == 'umkm') return redirect()->route('umkm.profile.edit');
+        if ($role == 'user') return redirect()->route('user.profile.edit');
+        return redirect()->route('admin.profile.edit');
+    })->name('profile.edit');
+
+    Route::put('admin/profile/update', [ProfileController::class, 'update'])->name('admin.profile.update');
+    Route::put('umkm/profile/update', [ProfileController::class, 'update'])->name('umkm.profile.update');
+    Route::put('user/profile/update', [ProfileController::class, 'update'])->name('user.profile.update');
+
+    Route::post('profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('admin/change-password', [AuthController::class, 'changePassword'])->name('change-password');
     Route::post('update-password', [AuthController::class, 'updatePassword'])->name('update-password');
     
+    // User Shared Features
+    Route::get('favorit', function() {
+        $layout = auth()->user()->role == 'umkm' ? 'layouts.umkm' : 'layouts.user';
+        return view('user.favorit', compact('layout'));
+    })->name('favorit');
+
+    Route::get('pengaturan', function() {
+        $layout = auth()->user()->role == 'umkm' ? 'layouts.umkm' : 'layouts.user';
+        return view('user.pengaturan', compact('layout'));
+    })->name('pengaturan');
+
     // Chat Routes (Shared)
     Route::get('chats', [ChatController::class, 'index'])->name('chats.index');
     Route::get('chats/{user}', [ChatController::class, 'show'])->name('chats.show');

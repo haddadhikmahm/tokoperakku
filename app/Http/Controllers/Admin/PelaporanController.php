@@ -13,7 +13,8 @@ class PelaporanController extends Controller
     public function index()
     {
         $laporans = Pelaporan::with('usaha')->latest()->get();
-        return view('admin.pelaporan.index-pelaporan', compact('laporans'));
+        $layout = auth()->user()->role == 'umkm' ? 'layouts.umkm' : 'layouts.admin_premium';
+        return view('admin.pelaporan.index-pelaporan', compact('laporans', 'layout'));
     }
 
     public function create()
@@ -25,7 +26,8 @@ class PelaporanController extends Controller
         $nextId = $lastLaporan ? $lastLaporan->id + 1 : 1;
         $autoKode = 'LAP' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
 
-        return view('admin.pelaporan.create-pelaporan', compact('usahas', 'months', 'autoKode'));
+        $layout = auth()->user()->role == 'umkm' ? 'layouts.umkm' : 'layouts.admin_premium';
+        return view('admin.pelaporan.create-pelaporan', compact('usahas', 'months', 'autoKode', 'layout'));
     }
 
     public function store(Request $request)
@@ -50,7 +52,8 @@ class PelaporanController extends Controller
         $laporan = Pelaporan::findOrFail($id);
         $usahas = Usaha::all();
         $months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        return view('admin.pelaporan.edit-pelaporan', compact('laporan', 'usahas', 'months'));
+        $layout = auth()->user()->role == 'umkm' ? 'layouts.umkm' : 'layouts.admin_premium';
+        return view('admin.pelaporan.edit-pelaporan', compact('laporan', 'usahas', 'months', 'layout'));
     }
 
     public function update(Request $request, $id)
@@ -87,6 +90,7 @@ class PelaporanController extends Controller
             ->orderBy('tahun', 'asc')
             ->get();
             
-        return view('admin.pelaporan.chart-pelaporan', compact('data'));
+        $layout = auth()->user()->role == 'umkm' ? 'layouts.umkm' : 'layouts.admin_premium';
+        return view('admin.pelaporan.chart-pelaporan', compact('data', 'layout'));
     }
 }

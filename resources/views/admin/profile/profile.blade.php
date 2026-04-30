@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+@extends($layout ?? 'layouts.admin_premium')
 
 @section('title', 'Profil Admin')
 
@@ -130,7 +130,12 @@
         <div class="welcome-text">
             <h2>Selamat Datang,<br>{{ $user->nama ?? $user->username }}</h2>
         </div>
-        <a href="{{ route('profile.edit') }}" class="edit-btn">Ubah</a>
+        @php
+            $editRoute = 'admin.profile.edit';
+            if (auth()->user()->role == 'umkm') $editRoute = 'umkm.profile.edit';
+            if (auth()->user()->role == 'user') $editRoute = 'user.profile.edit';
+        @endphp
+        <a href="{{ route($editRoute) }}" class="edit-btn">Ubah</a>
     </div>
 
     <div class="profile-form">

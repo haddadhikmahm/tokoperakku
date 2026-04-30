@@ -1,124 +1,253 @@
-@extends('adminlte::page')
+@extends($layout ?? 'layouts.user')
 
-@section('title', 'WhatsApp Chat')
-
-@section('content')
-<div class="container-fluid p-0" style="height: calc(100vh - 120px); overflow: hidden;">
-    <div class="row h-100 no-gutters">
-        <!-- Sidebar Contacts -->
-        <div class="col-md-4 col-lg-3 d-flex flex-column bg-white border-right h-100">
-            <div class="p-3 bg-light d-flex align-items-center justify-content-between border-bottom">
-                <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->username) }}&background=random" class="rounded-circle" style="width: 40px;" alt="">
-            </div>
-            
-            <div class="p-2 border-bottom bg-white">
-                <div class="input-group input-group-sm">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span>
-                    </div>
-                    <input type="text" id="contact-search" class="form-control bg-light border-left-0" placeholder="Cari atau mulai chat baru">
-                </div>
-            </div>
-
-            <div class="flex-grow-1 overflow-auto bg-white" id="sidebar-contacts">
-                @foreach($chatUsers as $chatUser)
-                <a href="{{ route('chats.show', $chatUser->id) }}" class="text-decoration-none text-dark contact-item" data-name="{{ strtolower($chatUser->display_name) }}" data-user-id="{{ $chatUser->id }}">
-                    <div class="d-flex align-items-center p-3 border-bottom hover-light">
-                        <div class="position-relative">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode($chatUser->username) }}&background=random" class="rounded-circle mr-3" style="width: 49px;" alt="">
-                            <span class="online-indicator d-none" id="status-dot-{{ $chatUser->id }}"></span>
-                        </div>
-                        <div class="flex-grow-1 overflow-hidden">
-                            <div class="d-flex justify-content-between align-items-baseline">
-                                <h6 class="mb-0 text-truncate font-weight-bold">{{ $chatUser->display_name }}</h6>
-                                <small class="text-muted text-xs">{{ $chatUser->last_chat_time }}</small>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center text-truncate w-75">
-                                    @if($chatUser->last_message_sender_id == Auth::id())
-                                        @if($chatUser->last_message_is_read)
-                                            <i class="fas fa-check-double text-primary mr-1" style="font-size: 10px;"></i>
-                                        @else
-                                            <i class="fas fa-check text-muted mr-1 sidebar-check-{{ $chatUser->id }}" style="font-size: 10px;"></i>
-                                        @endif
-                                    @endif
-                                    <p class="mb-0 text-sm text-muted text-truncate">{{ $chatUser->last_message ?: 'Klik untuk memulai chat' }}</p>
-                                </div>
-                                @if($chatUser->unread_count > 0)
-                                    <span class="badge badge-success badge-pill">{{ $chatUser->unread_count }}</span>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </a>
-                @endforeach
-            </div>
-        </div>
-
-        <!-- Empty State (WhatsApp Style) -->
-        <div class="col-md-8 col-lg-9 d-flex flex-column h-100">
-            <div class="h-100 d-flex flex-column justify-content-center align-items-center bg-light border-left">
-                <div class="text-center p-5 rounded-circle bg-white shadow-sm mb-4">
-                    <i class="fab fa-whatsapp fa-7x text-success"></i>
-                </div>
-                <h4 class="text-muted">WhatsApp Web</h4>
-                <p class="text-muted px-5 text-center">Kirim dan terima pesan seketika. <br>Pilih salah satu kontak di sebelah kiri untuk mulai mengobrol.</p>
-                <hr class="w-25">
-                <small class="text-muted mt-3"><i class="fas fa-lock"></i> Terenkripsi secara end-to-end</small>
-            </div>
-        </div>
-    </div>
-</div>
-@stop
+@section('title', 'Pesan')
 
 @section('css')
 <style>
-    /* AdminLTE content adjustment */
-    .content-wrapper { background: #f0f2f5 !important; }
-    .content-header { display: none !important; }
-    .content { padding: 0 !important; }
-    .main-sidebar { background-color: #ffffff !important; }
-    .main-sidebar .brand-link { 
-        background-color: #ffffff !important; 
-        border-bottom: 1px solid #dee2e6;
-        pointer-events: none; /* Disable clicking */
-        cursor: default;
-    }
-    .main-sidebar .brand-link .brand-text {
-        color: #343a40 !important; /* Ensure text is visible (dark) */
-        opacity: 1 !important;
+    .chat-container {
+        display: flex;
+        background: #fff;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid #f1f1f4;
+        height: calc(100vh - 250px);
+        min-height: 500px;
     }
 
-    .hover-light:hover { background-color: #f5f6f6 !important; }
-    
-    .online-indicator {
+    /* Contacts Sidebar */
+    .contacts-sidebar {
+        width: 350px;
+        border-right: 1px solid #f1f1f4;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 30px;
+    }
+
+    .sidebar-header h2 {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+
+    .search-box {
+        position: relative;
+        margin-bottom: 15px;
+    }
+
+    .search-box input {
+        width: 100%;
+        padding: 12px 20px 12px 45px;
+        border-radius: 12px;
+        border: 1px solid #f1f1f4;
+        background: #fafafa;
+        font-size: 14px;
+        outline: none;
+    }
+
+    .search-box i {
         position: absolute;
-        bottom: 5px;
-        right: 15px;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #a1a1aa;
+    }
+
+    .sort-by {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        color: #71717a;
+    }
+
+    .sort-by span {
+        color: #3b82f6;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .contact-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 15px 30px;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        border-radius: 15px;
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.2s;
+        margin-bottom: 5px;
+    }
+
+    .contact-item:hover {
+        background: #f8fafc;
+    }
+
+    .contact-item.active {
+        background: #f1f5f9;
+    }
+
+    .avatar-wrapper {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .avatar-img {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .status-dot {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
         width: 12px;
         height: 12px;
-        background-color: #25d366;
-        border: 2px solid white;
         border-radius: 50%;
+        border: 2px solid #fff;
+        background: #cbd5e1;
+    }
+
+    .status-dot.online {
+        background: #22c55e;
+    }
+
+    .contact-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .contact-name-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+
+    .contact-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: #18181b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .chat-time {
+        font-size: 11px;
+        color: #a1a1aa;
+    }
+
+    .last-msg {
+        font-size: 13px;
+        color: #71717a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .typing-status {
+        color: #ef4444;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    /* Main Chat Area */
+    .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: #fafafa;
+        color: #a1a1aa;
+        text-align: center;
+        padding: 40px;
+    }
+
+    .empty-chat-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+        opacity: 0.2;
+    }
+
+    @media (max-width: 768px) {
+        .contacts-sidebar { width: 100%; }
+        .chat-main { display: none; }
     }
 </style>
-@stop
+@endsection
+
+@section('content')
+<div class="chat-container">
+    <div class="contacts-sidebar">
+        <div class="sidebar-header">
+            <h2>Pesan</h2>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="contact-search" placeholder="Cari">
+            </div>
+            <div class="sort-by">
+                Sort by <span>Newest <i class="fas fa-chevron-down" style="font-size: 8px;"></i></span>
+            </div>
+        </div>
+
+        <div class="contact-list" id="sidebar-contacts">
+            @foreach($chatUsers as $chatUser)
+            <a href="{{ route('chats.show', $chatUser->id) }}" class="contact-item" data-name="{{ strtolower($chatUser->display_name) }}">
+                <div class="avatar-wrapper">
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode($chatUser->username) }}&background=random" class="avatar-img" alt="">
+                    <div class="status-dot" id="status-dot-{{ $chatUser->id }}"></div>
+                </div>
+                <div class="contact-info">
+                    <div class="contact-name-row">
+                        <span class="contact-name">{{ $chatUser->display_name }}</span>
+                        <span class="chat-time">{{ $chatUser->last_chat_time }}</span>
+                    </div>
+                    <div class="last-msg">
+                        @if($chatUser->unread_count > 0)
+                            <strong>{{ $chatUser->last_message ?: 'Klik untuk memulai chat' }}</strong>
+                        @else
+                            {{ $chatUser->last_message ?: 'Klik untuk memulai chat' }}
+                        @endif
+                    </div>
+                </div>
+            </a>
+            @endforeach
+        </div>
+    </div>
+
+    <div class="chat-main">
+        <div class="empty-chat-icon">
+            <i class="far fa-comments"></i>
+        </div>
+        <h3>TekoPerakku Chat</h3>
+        <p>Pilih salah satu kontak di sebelah kiri untuk mulai mengobrol.</p>
+    </div>
+</div>
+@endsection
 
 @section('js')
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-@vite(['resources/js/app.js'])
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const contactSearch = document.getElementById('contact-search');
-        
-        // --- CONTACT SEARCH ---
         if (contactSearch) {
             contactSearch.addEventListener('input', function() {
                 const query = this.value.toLowerCase();
                 document.querySelectorAll('.contact-item').forEach(item => {
                     const name = item.getAttribute('data-name');
                     if (name.includes(query)) {
-                        item.style.display = 'block';
+                        item.style.display = 'flex';
                     } else {
                         item.style.display = 'none';
                     }
@@ -129,51 +258,44 @@
         @if(Auth::check())
         window.addEventListener('load', () => {
             if (window.Echo) {
-                // Listen for private messages
                 window.Echo.private('chat.{{ Auth::id() }}')
                     .listen('.message.sent', (e) => {
                         updateSidebar(e.message);
                     });
 
-                // Listen for online presence
                 window.Echo.join('online')
-                    .here((users) => {
-                        users.forEach(u => {
-                            const dot = document.getElementById(`status-dot-${u.id}`);
-                            if (dot) dot.classList.remove('d-none');
-                        });
-                    })
-                    .joining((user) => {
-                        const dot = document.getElementById(`status-dot-${user.id}`);
-                        if (dot) dot.classList.remove('d-none');
-                    })
-                    .leaving((user) => {
-                        const dot = document.getElementById(`status-dot-${user.id}`);
-                        if (dot) dot.classList.add('d-none');
-                    });
+                    .here((users) => { updateStatuses(users); })
+                    .joining((user) => { updateStatus(user, true); })
+                    .leaving((user) => { updateStatus(user, false); });
             }
         });
         @endif
 
         function updateSidebar(msg) {
-            const contactLink = document.querySelector(`a[href$="/chats/${msg.sender_id}"]`);
-            if (contactLink) {
+            const contactItem = document.querySelector(`.contact-item[href$="/chats/${msg.sender_id}"]`);
+            if (contactItem) {
                 const sidebar = document.getElementById('sidebar-contacts');
-                sidebar.prepend(contactLink);
-                const preview = contactLink.querySelector('p.text-muted');
-                if (preview) preview.innerText = msg.message;
-                const timeEl = contactLink.querySelector('small.text-muted');
-                if (timeEl) timeEl.innerText = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                let badge = contactLink.querySelector('.badge-success');
-                if (!badge) {
-                    const container = contactLink.querySelector('.d-flex.justify-content-between.align-items-center');
-                    container.insertAdjacentHTML('beforeend', '<span class="badge badge-success badge-pill">1</span>');
-                } else {
-                    badge.innerText = parseInt(badge.innerText) + 1;
+                sidebar.prepend(contactItem);
+                
+                const lastMsgEl = contactItem.querySelector('.last-msg');
+                if (lastMsgEl) {
+                    lastMsgEl.innerHTML = `<strong>${msg.message}</strong>`;
+                }
+                const timeEl = contactItem.querySelector('.chat-time');
+                if (timeEl) {
+                    timeEl.innerText = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 }
             }
         }
+
+        function updateStatus(user, isOnline) {
+            const dot = document.getElementById(`status-dot-${user.id}`);
+            if (dot) dot.classList.toggle('online', isOnline);
+        }
+
+        function updateStatuses(users) {
+            users.forEach(u => updateStatus(u, true));
+        }
     });
 </script>
-@stop
+@endsection

@@ -18,7 +18,11 @@ class ChatController extends Controller
             return response()->json($chatUsers);
         }
 
-        return view('chats.index_new', compact('chatUsers'));
+        $layout = 'layouts.admin_premium';
+        if ($user->role == 'umkm') $layout = 'layouts.umkm';
+        if ($user->role == 'user') $layout = 'layouts.user';
+
+        return view('chats.index_new', compact('chatUsers', 'layout'));
     }
 
     public function show(User $user)
@@ -50,7 +54,11 @@ class ChatController extends Controller
             ]);
         }
 
-        return view('chats.show_new', compact('user', 'messages', 'chatUsers'));
+        $layout = 'layouts.admin_premium';
+        if ($currentUser->role == 'umkm') $layout = 'layouts.umkm';
+        if ($currentUser->role == 'user') $layout = 'layouts.user';
+
+        return view('chats.show_new', compact('user', 'messages', 'chatUsers', 'layout'));
     }
 
     private function getChatUsers($user)

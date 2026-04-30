@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+@extends($layout ?? 'layouts.admin_premium')
 
 @section('title', 'Edit Profil Admin')
 

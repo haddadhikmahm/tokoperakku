@@ -1,516 +1,384 @@
-@extends('adminlte::page')
+@extends($layout ?? 'layouts.user')
 
-@section('title', 'WhatsApp Chat')
-
-@section('content')
-<div class="container-fluid p-0" style="height: calc(100vh - 120px); overflow: hidden;">
-    <div class="row h-100 no-gutters">
-        <!-- Sidebar Contacts -->
-        <div class="col-md-4 col-lg-3 d-flex flex-column bg-white border-right h-100">
-            <div class="p-3 bg-light d-flex align-items-center justify-content-between border-bottom">
-                <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->username) }}&background=random" class="rounded-circle" style="width: 40px;" alt="">
-            </div>
-            
-            <div class="p-2 border-bottom bg-white">
-                <div class="input-group input-group-sm">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span>
-                    </div>
-                    <input type="text" id="contact-search" class="form-control bg-light border-left-0" placeholder="Cari atau mulai chat baru">
-                </div>
-            </div>
-
-            <div class="flex-grow-1 overflow-auto bg-white" id="sidebar-contacts">
-                @foreach($chatUsers as $chatUser)
-                <a href="{{ route('chats.show', $chatUser->id) }}" class="text-decoration-none text-dark contact-item {{ isset($user) && $user->id == $chatUser->id ? 'active-chat' : '' }}" data-name="{{ strtolower($chatUser->display_name) }}" data-user-id="{{ $chatUser->id }}">
-                    <div class="d-flex align-items-center p-3 border-bottom hover-light">
-                        <div class="position-relative">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode($chatUser->username) }}&background=random" class="rounded-circle mr-3" style="width: 49px;" alt="">
-                            <span class="online-indicator d-none" id="status-dot-{{ $chatUser->id }}"></span>
-                        </div>
-                        <div class="flex-grow-1 overflow-hidden">
-                            <div class="d-flex justify-content-between align-items-baseline">
-                                <h6 class="mb-0 text-truncate font-weight-bold">{{ $chatUser->display_name }}</h6>
-                                <small class="text-muted text-xs">{{ $chatUser->last_chat_time }}</small>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center text-truncate w-75">
-                                    @if($chatUser->last_message_sender_id == Auth::id())
-                                        @if($chatUser->last_message_is_read)
-                                            <i class="fas fa-check-double text-primary mr-1" style="font-size: 10px;"></i>
-                                        @else
-                                            <i class="fas fa-check text-muted mr-1 sidebar-check-{{ $chatUser->id }}" style="font-size: 10px;"></i>
-                                        @endif
-                                    @endif
-                                    <p class="mb-0 text-sm text-muted text-truncate">{{ $chatUser->last_message ?: 'Klik untuk memulai chat' }}</p>
-                                </div>
-                                @if($chatUser->unread_count > 0)
-                                    <span class="badge badge-success badge-pill">{{ $chatUser->unread_count }}</span>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </a>
-                @endforeach
-            </div>
-        </div>
-
-        <!-- Main Chat Area -->
-        <div class="col-md-8 col-lg-9 d-flex flex-column h-100 position-relative">
-            @if(isset($user))
-            <!-- Chat Header -->
-            <div class="p-2 bg-light d-flex align-items-center border-bottom border-left z-index-10">
-                <img src="https://ui-avatars.com/api/?name={{ urlencode($user->username) }}&background=random" class="rounded-circle mr-3" style="width: 40px;" alt="">
-                <div class="flex-grow-1">
-                    <h6 class="mb-0 font-weight-bold">{{ $user->role === 'umkm' && $user->usaha ? $user->usaha->nama_usaha : $user->username }}</h6>
-                    <small class="text-muted" id="user-status">Offline</small>
-                </div>
-                <div class="d-flex align-items-center text-muted pr-3">
-                    <div id="search-chat-container" class="mr-2 d-none d-flex align-items-center">
-                        <input type="text" id="message-search" class="form-control form-control-sm rounded-pill" placeholder="Cari pesan...">
-                        <small id="search-count" class="ml-2 text-primary font-weight-bold" style="white-space: nowrap;"></small>
-                    </div>
-                    <i class="fas fa-search mr-3 cursor-pointer" id="btn-search-chat"></i>
-                </div>
-            </div>
-
-            <!-- Chat Content (WhatsApp Style) -->
-            <div class="flex-grow-1 overflow-auto p-4 chat-bg" id="message-container">
-                @foreach($messages as $message)
-                <div class="d-flex mb-2 {{ $message->sender_id == Auth::id() ? 'justify-content-end' : 'justify-content-start' }} chat-message" data-content="{{ strtolower($message->message) }}">
-                    <div class="message-bubble {{ $message->sender_id == Auth::id() ? 'bubble-right' : 'bubble-left' }}" id="message-{{ $message->id }}">
-                        <div class="message-text">
-                            {!! nl2br(e($message->message)) !!}
-                        </div>
-                        <div class="d-flex justify-content-end align-items-center mt-1">
-                            <span class="message-time">{{ $message->created_at->format('H:i') }}</span>
-                            @if($message->sender_id == Auth::id())
-                                <div class="ml-1 status-icon">
-                                    @if($message->is_read)
-                                        <i class="fas fa-check-double text-primary" style="font-size: 10px;"></i>
-                                    @else
-                                        <!-- Note: Initial server side check is simple, JS will update this based on presence -->
-                                        <i class="fas fa-check text-muted check-single" style="font-size: 10px;"></i>
-                                    @endif
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-                @endforeach
-            </div>
-
-            <!-- Input Bar -->
-            <div class="p-3 bg-light border-top border-left position-relative">
-                <form id="chat-form" class="d-flex align-items-center">
-                    @csrf
-                    <input type="hidden" name="receiver_id" value="{{ $user->id }}">
-                    <button type="button" class="btn btn-link text-muted px-2" id="emoji-trigger">
-                        <i class="far fa-smile fa-lg"></i>
-                    </button>
-                    <input type="text" name="message" id="message-input" placeholder="Ketik pesan..." class="form-control mx-2 border-0 rounded-pill" style="padding: 10px 20px;" autocomplete="off">
-                    <button type="submit" class="btn bg-success text-white rounded-circle" style="width: 45px; height: 45px;">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </form>
-            </div>
-            @else
-            <div class="h-100 d-flex flex-column justify-content-center align-items-center bg-light">
-                <div class="text-center p-5 rounded-circle bg-white shadow-sm mb-4">
-                    <i class="fab fa-whatsapp fa-7x text-success"></i>
-                </div>
-                <h4 class="text-muted">WhatsApp Web</h4>
-                <p class="text-muted px-5 text-center">Kirim dan terima pesan seketika. <br>Pilih salah satu kontak di sebelah kiri untuk mulai mengobrol.</p>
-                <hr class="w-25">
-                <small class="text-muted mt-3"><i class="fas fa-lock"></i> Terenkripsi secara end-to-end</small>
-            </div>
-            @endif
-        </div>
-    </div>
-</div>
-@stop
+@section('title', 'Chat with ' . $user->username)
 
 @section('css')
 <style>
-    /* AdminLTE content adjustment */
-    .content-wrapper { background: #f0f2f5 !important; }
-    .content-header { display: none !important; }
-    .content { padding: 0 !important; }
-    .main-sidebar { background-color: #ffffff !important; }
-    .main-sidebar .brand-link { 
-        background-color: #ffffff !important; 
-        border-bottom: 1px solid #dee2e6;
-        pointer-events: none; /* Disable clicking */
-        cursor: default;
-    }
-    .main-sidebar .brand-link .brand-text {
-        color: #343a40 !important; /* Ensure text is visible (dark) */
-        opacity: 1 !important;
+    .chat-container {
+        display: flex;
+        background: #fff;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid #f1f1f4;
+        height: calc(100vh - 250px);
+        min-height: 500px;
     }
 
-    /* Custom WhatsApp Theme */
-    .chat-bg {
-        background-color: #e5ddd5;
-        background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
-        background-blend-mode: overlay;
-        background-size: contain;
+    /* Contacts Sidebar (Same as index) */
+    .contacts-sidebar {
+        width: 350px;
+        border-right: 1px solid #f1f1f4;
+        display: flex;
+        flex-direction: column;
     }
 
-    .hover-light:hover { background-color: #f5f6f6 !important; }
-    .active-chat { background-color: #ebebeb !important; border-left: 5px solid #00a884; }
+    .sidebar-header { padding: 30px; }
+    .sidebar-header h2 { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+    .search-box { position: relative; margin-bottom: 15px; }
+    .search-box input { width: 100%; padding: 12px 20px 12px 45px; border-radius: 12px; border: 1px solid #f1f1f4; background: #fafafa; font-size: 14px; outline: none; }
+    .search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #a1a1aa; }
+    .contact-list { flex: 1; overflow-y: auto; padding: 0 15px 30px; }
+    .contact-item { display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 15px; text-decoration: none; color: inherit; margin-bottom: 5px; }
+    .contact-item.active { background: #f1f5f9; }
+    .avatar-wrapper { position: relative; flex-shrink: 0; }
+    .avatar-img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+    .status-dot { position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; background: #cbd5e1; }
+    .status-dot.online { background: #22c55e; }
+    .contact-info { flex: 1; min-width: 0; }
+    .contact-name { font-size: 14px; font-weight: 700; color: #18181b; }
 
-    .message-bubble {
+    /* Main Chat Window */
+    .chat-window {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+    }
+
+    .chat-header {
+        padding: 20px 30px;
+        border-bottom: 1px solid #f1f1f4;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .header-info h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    .header-info span {
+        font-size: 12px;
+        font-weight: 600;
+        color: #71717a;
+    }
+
+    .header-info span.online {
+        color: #ef4444; /* Image shows Online in red/pinkish? Wait, it says 'Online' in red? Actually, looking closer at image 1, 'Online' is red. Image 2, it's also red. */
+    }
+
+    .messages-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        background: #fff;
+    }
+
+    .message-row {
+        display: flex;
+        flex-direction: column;
+        max-width: 80%;
+    }
+
+    .message-row.self {
+        align-self: flex-end;
+        align-items: flex-end;
+    }
+
+    .message-row.other {
+        align-self: flex-start;
+        align-items: flex-start;
+    }
+
+    .message-content {
+        padding: 12px 18px;
+        border-radius: 18px;
+        font-size: 14px;
+        line-height: 1.5;
         position: relative;
-        max-width: 65%;
-        padding: 6px 7px 8px 9px;
-        border-radius: 7.5px;
-        box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
-        word-wrap: break-word;
     }
 
-    .bubble-left {
-        background-color: #ffffff;
-        color: #111b21;
-        border-top-left-radius: 0;
+    .other .message-content {
+        background: #f4f4f5;
+        color: #18181b;
+        border-bottom-left-radius: 4px;
     }
 
-    .bubble-left::before {
+    .self .message-content {
+        background: #fee2e2; /* Light red/pink like image */
+        color: #18181b;
+        border-bottom-right-radius: 4px;
+    }
+
+    .message-time {
+        font-size: 11px;
+        color: #a1a1aa;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .self .message-time { justify-content: flex-end; }
+
+    .input-bar {
+        padding: 20px 30px;
+        border-top: 1px solid #f1f1f4;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .attachment-btn {
+        color: #71717a;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+    .input-wrapper {
+        flex: 1;
+        position: relative;
+    }
+
+    .message-input {
+        width: 100%;
+        padding: 12px 20px;
+        border-radius: 12px;
+        border: 1px solid #f1f1f4;
+        font-size: 14px;
+        outline: none;
+    }
+
+    .send-btn {
+        color: #ef4444;
+        font-weight: 700;
+        font-size: 14px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        text-transform: lowercase;
+    }
+
+    .date-divider {
+        text-align: center;
+        position: relative;
+        margin: 20px 0;
+    }
+
+    .date-divider::before {
         content: "";
         position: absolute;
-        top: 0;
-        left: -8px;
-        width: 0;
-        height: 0;
-        border-top: 10px solid #ffffff;
-        border-left: 10px solid transparent;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #f1f1f4;
+        z-index: 1;
     }
 
-    .bubble-right {
-        background-color: #dcf8c6; /* WhatsApp Greenish Bubble */
-        color: #111b21;
-        border-top-right-radius: 0;
-    }
-
-    .bubble-right::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        right: -8px;
-        width: 0;
-        height: 0;
-        border-top: 10px solid #dcf8c6;
-        border-right: 10px solid transparent;
-    }
-
-    .message-text { font-size: 14.2px; line-height: 19px; }
-    .message-time { font-size: 11px; color: #667781; margin-top: 4px; }
-    .cursor-pointer { cursor: pointer; }
-
-    .online-indicator {
-        position: absolute;
-        bottom: 2px;
-        right: 15px;
-        width: 12px;
-        height: 12px;
-        background-color: #25d366;
-        border: 2px solid white;
-        border-radius: 50%;
-    }
-
-    .search-highlight {
-        background-color: #fff3cd !important; /* Yellow highlight */
-        border: 2px solid #ffc107 !important;
-        transition: all 0.3s ease;
-        transform: scale(1.02);
+    .date-divider span {
+        background: #fff;
+        padding: 0 15px;
+        font-size: 11px;
+        color: #a1a1aa;
+        position: relative;
+        z-index: 2;
+        text-transform: uppercase;
+        font-weight: 600;
     }
 </style>
-@stop
+@endsection
+
+@section('content')
+<div class="chat-container">
+    <div class="contacts-sidebar d-none d-md-flex">
+        <div class="sidebar-header">
+            <h2>Pesan</h2>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="contact-search" placeholder="Cari">
+            </div>
+        </div>
+
+        <div class="contact-list">
+            @foreach($chatUsers as $chatUser)
+            <a href="{{ route('chats.show', $chatUser->id) }}" class="contact-item {{ $user->id == $chatUser->id ? 'active' : '' }}" data-name="{{ strtolower($chatUser->display_name) }}">
+                <div class="avatar-wrapper">
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode($chatUser->username) }}&background=random" class="avatar-img" alt="">
+                    <div class="status-dot" id="status-dot-{{ $chatUser->id }}"></div>
+                </div>
+                <div class="contact-info">
+                    <div class="contact-name">{{ $chatUser->display_name }}</div>
+                </div>
+            </a>
+            @endforeach
+        </div>
+    </div>
+
+    <div class="chat-window">
+        <div class="chat-header">
+            <div class="avatar-wrapper">
+                <img src="https://ui-avatars.com/api/?name={{ urlencode($user->username) }}&background=random" class="avatar-img" alt="">
+                <div class="status-dot" id="header-status-dot"></div>
+            </div>
+            <div class="header-info">
+                <h4>{{ $user->role === 'umkm' && $user->usaha ? $user->usaha->nama_usaha : $user->username }}</h4>
+                <span id="user-status">Offline</span>
+            </div>
+        </div>
+
+        <div class="messages-area" id="message-container">
+            <div class="date-divider"><span>Today</span></div>
+            
+            @foreach($messages as $message)
+                <div class="message-row {{ $message->sender_id == Auth::id() ? 'self' : 'other' }}">
+                    <div class="message-content">
+                        @if($message->type === 'image')
+                            <img src="{{ asset('storage/' . $message->attachment) }}" style="max-width: 100%; border-radius: 12px; margin-bottom: 5px;"><br>
+                        @elseif($message->type === 'file')
+                            <a href="{{ asset('storage/' . $message->attachment) }}" target="_blank" class="text-dark">
+                                <i class="fas fa-file-alt mr-2"></i> {{ $message->message ?: 'File' }}
+                            </a>
+                        @endif
+                        
+                        @if($message->type === 'text' || $message->message)
+                            {!! nl2br(e($message->message)) !!}
+                        @endif
+                    </div>
+                    <div class="message-time">
+                        {{ $message->created_at->format('H:i') }}
+                        @if($message->sender_id == Auth::id())
+                            <i class="fas fa-check{{ $message->is_read ? '-double text-primary' : '' }}" style="font-size: 8px;"></i>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        <form id="chat-form" class="input-bar">
+            @csrf
+            <input type="hidden" name="receiver_id" value="{{ $user->id }}">
+            <i class="fas fa-paperclip attachment-btn"></i>
+            <div class="input-wrapper">
+                <input type="text" name="message" id="message-input" placeholder="Ketik sesuatu" class="message-input" autocomplete="off">
+            </div>
+            <button type="submit" class="send-btn">kirim</button>
+        </form>
+    </div>
+</div>
+@endsection
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 @vite(['resources/js/app.js'])
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const messageContainer = document.getElementById('message-container');
         const chatForm = document.getElementById('chat-form');
-        const attachmentInput = document.getElementById('attachment');
-        const contactSearch = document.getElementById('contact-search');
-        const btnSearchChat = document.getElementById('btn-search-chat');
-        const messageSearch = document.getElementById('message-search');
-        const searchChatContainer = document.getElementById('search-chat-container');
 
         if (messageContainer) {
             messageContainer.scrollTop = messageContainer.scrollHeight;
         }
 
-        // --- SEARCH CONTACTS ---
-        if (contactSearch) {
-            contactSearch.addEventListener('input', function() {
-                const query = this.value.toLowerCase();
-                document.querySelectorAll('.contact-item').forEach(item => {
-                    const name = item.getAttribute('data-name');
-                    if (name.includes(query)) {
-                        item.classList.remove('d-none');
-                    } else {
-                        item.classList.add('d-none');
-                    }
-                });
-            });
-        }
-
-        // --- SEARCH MESSAGES ---
-        if (btnSearchChat) {
-            btnSearchChat.addEventListener('click', () => {
-                searchChatContainer.classList.toggle('d-none');
-                if (!searchChatContainer.classList.contains('d-none')) {
-                    messageSearch.focus();
-                } else {
-                    // Reset search highlight
-                    messageSearch.value = '';
-                    document.querySelectorAll('.message-bubble').forEach(b => {
-                        b.classList.remove('search-highlight');
-                        b.style.opacity = '1';
-                    });
-                }
-            });
-        }
-
-        if (messageSearch) {
-            const searchCount = document.getElementById('search-count');
-            messageSearch.addEventListener('input', function() {
-                const query = this.value.toLowerCase();
-                const bubbles = document.querySelectorAll('.message-bubble');
-                let matches = 0;
-                
-                bubbles.forEach(b => {
-                    b.classList.remove('search-highlight');
-                    b.style.opacity = query ? '0.3' : '1';
-                });
-
-                if (!query) {
-                    searchCount.innerText = '';
-                    return;
-                }
-
-                let firstMatch = null;
-                bubbles.forEach(bubble => {
-                    const text = bubble.querySelector('.message-text').innerText.toLowerCase();
-                    if (text.includes(query)) {
-                        matches++;
-                        bubble.classList.add('search-highlight');
-                        bubble.style.opacity = '1';
-                        if (!firstMatch) firstMatch = bubble;
-                    }
-                });
-
-                searchCount.innerText = matches > 0 ? `${matches} ditemukan` : 'Tidak ada';
-
-                if (firstMatch) {
-                    firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            });
-        }
-
-        // --- SEND MESSAGE ---
         if (chatForm) {
             chatForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
                 if (!formData.get('message')) return;
 
-                const submitBtn = this.querySelector('button[type="submit"]');
-                submitBtn.disabled = true;
+                const input = document.getElementById('message-input');
+                input.disabled = true;
 
                 axios.post('{{ route("chats.store") }}', formData)
                     .then(response => {
-                        const msg = response.data;
-                        this.reset();
-                        appendMessage(msg, true);
-                        submitBtn.disabled = false;
+                        input.value = '';
+                        input.disabled = false;
+                        input.focus();
+                        // Real-time update handled by Echo
                     })
                     .catch(error => {
                         console.error(error);
-                        submitBtn.disabled = false;
+                        input.disabled = false;
                     });
             });
-        }
-
-        let onlineUsers = [];
-
-        function appendMessage(msg, isSelf) {
-            if (!messageContainer) return;
-            
-            const sideClass = isSelf ? 'justify-content-end' : 'justify-content-start';
-            const bubbleClass = isSelf ? 'bubble-right' : 'bubble-left';
-            const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
-            // Determine initial checkmark for sender
-            let checkHtml = '';
-            if (isSelf) {
-                if (msg.is_read) {
-                    checkHtml = '<i class="fas fa-check-double text-primary" style="font-size: 10px;"></i>';
-                } else {
-                    // Check if receiver is online
-                    @if(isset($user))
-                    const isOnline = onlineUsers.some(u => u.id == {{ $user->id }});
-                    if (isOnline) {
-                        checkHtml = '<i class="fas fa-check-double text-muted" style="font-size: 10px;"></i>';
-                    } else {
-                        checkHtml = '<i class="fas fa-check text-muted" style="font-size: 10px;"></i>';
-                    }
-                    @else
-                    checkHtml = '<i class="fas fa-check text-muted" style="font-size: 10px;"></i>';
-                    @endif
-                }
-            }
-
-            const msgHtml = `
-                <div class="d-flex mb-2 ${sideClass} chat-message" data-content="${msg.message ? msg.message.toLowerCase() : ''}">
-                    <div class="message-bubble ${bubbleClass}" id="message-${msg.id}">
-                        <div class="message-text">${msg.message.replace(/\n/g, '<br>')}</div>
-                        <div class="d-flex justify-content-end align-items-center mt-1">
-                            <span class="message-time">${time}</span>
-                            <div class="ml-1 status-icon">${checkHtml}</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            messageContainer.insertAdjacentHTML('beforeend', msgHtml);
-            messageContainer.scrollTop = messageContainer.scrollHeight;
         }
 
         // --- WEB SOCKET (LARAVEL ECHO) ---
         @if(Auth::check())
         window.addEventListener('load', () => {
             if (window.Echo) {
-                // Listen for private messages
                 window.Echo.private('chat.{{ Auth::id() }}')
                     .listen('.message.sent', (e) => {
-                        console.log('New message received:', e.message);
-                        @if(isset($user))
-                            if (e.message.sender_id == {{ $user->id }}) {
-                                appendMessage(e.message, false);
-                                // Notify sender that we've read it (if currently active in this chat)
-                                axios.post(`/chats/${e.message.sender_id}/read`);
-                            }
-                        @endif
-                        updateSidebar(e.message);
-                    })
-                    .listen('.message.read', (e) => {
-                        console.log('Message read by recipient:', e.chat.id);
-                        const msgBubble = document.getElementById(`message-${e.chat.id}`);
-                        if (msgBubble) {
-                            const iconContainer = msgBubble.querySelector('.status-icon');
-                            if (iconContainer) {
-                                iconContainer.innerHTML = '<i class="fas fa-check-double text-primary" style="font-size: 10px;"></i>';
-                            }
+                        if (e.message.sender_id == {{ $user->id }}) {
+                            appendMessage(e.message, false);
+                            axios.post(`/chats/${e.message.sender_id}/read`);
                         }
+                        updateSidebar(e.message);
                     });
 
-                // Listen for online presence
                 window.Echo.join('online')
-                    .here((users) => {
-                        onlineUsers = users;
-                        updateAllStatuses();
-                    })
-                    .joining((user) => {
-                        onlineUsers.push(user);
-                        updateUserStatus(user, true);
-                    })
-                    .leaving((user) => {
-                        onlineUsers = onlineUsers.filter(u => u.id != user.id);
-                        updateUserStatus(user, false);
-                    });
+                    .here((users) => { updateStatuses(users); })
+                    .joining((user) => { updateStatus(user, true); })
+                    .leaving((user) => { updateStatus(user, false); });
             }
         });
         @endif
 
-        function updateUserStatus(user, isOnline) {
-            const dot = document.getElementById(`status-dot-${user.id}`);
-            if (dot) {
-                if (isOnline) dot.classList.remove('d-none');
-                else dot.classList.add('d-none');
+        function updateSidebar(msg) {
+            const contactItem = document.querySelector(`.contact-item[href$="/chats/${msg.sender_id}"]`);
+            if (contactItem) {
+                const sidebar = document.querySelector('.contact-list');
+                sidebar.prepend(contactItem);
+                
+                // Update last message if needed (optional since show view doesn't show preview in sidebar for now)
             }
+        }
+
+        function appendMessage(msg, isSelf) {
+            const sideClass = isSelf ? 'self' : 'other';
+            const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const check = isSelf ? (msg.is_read ? '<i class="fas fa-check-double text-primary" style="font-size: 8px;"></i>' : '<i class="fas fa-check" style="font-size: 8px;"></i>') : '';
+
+            let contentHtml = '';
+            if (msg.type === 'image') {
+                contentHtml = `<img src="/storage/${msg.attachment}" style="max-width: 100%; border-radius: 12px; margin-bottom: 5px;"><br>${msg.message || ''}`;
+            } else if (msg.type === 'file') {
+                contentHtml = `<a href="/storage/${msg.attachment}" target="_blank" class="text-dark"><i class="fas fa-file-alt mr-2"></i> ${msg.message || 'File'}</a>`;
+            } else {
+                contentHtml = msg.message.replace(/\n/g, '<br>');
+            }
+
+            const html = `
+                <div class="message-row ${sideClass}">
+                    <div class="message-content">${contentHtml}</div>
+                    <div class="message-time">${time} ${check}</div>
+                </div>
+            `;
+            messageContainer.insertAdjacentHTML('beforeend', html);
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+
+        function updateStatus(user, isOnline) {
+            const dot = document.getElementById(`status-dot-${user.id}`);
+            if (dot) dot.classList.toggle('online', isOnline);
             
-            @if(isset($user))
             if (user.id == {{ $user->id }}) {
                 const statusText = document.getElementById('user-status');
-                if (isOnline) {
-                    statusText.innerText = 'Online';
-                    statusText.classList.replace('text-muted', 'text-success');
-                    // Update all single checks to double checks (grey)
-                    document.querySelectorAll('.fa-check.text-muted').forEach(el => {
-                        el.className = 'fas fa-check-double text-muted';
-                    });
-                } else {
-                    statusText.innerText = 'Offline';
-                    statusText.classList.replace('text-success', 'text-muted');
-                }
-            }
-            @endif
-        }
-
-        function updateAllStatuses() {
-            onlineUsers.forEach(u => {
-                const dot = document.getElementById(`status-dot-${u.id}`);
-                if (dot) dot.classList.remove('d-none');
-                
-                @if(isset($user))
-                if (u.id == {{ $user->id }}) {
-                    const statusText = document.getElementById('user-status');
-                    statusText.innerText = 'Online';
-                    statusText.classList.replace('text-muted', 'text-success');
-                    // Update all single checks to double checks
-                    document.querySelectorAll('.fa-check.text-muted').forEach(el => {
-                        el.className = 'fas fa-check-double text-muted';
-                    });
-                }
-                @endif
-            });
-        }
-
-        function updateSidebar(msg) {
-            const contactId = msg.sender_id == {{ Auth::id() }} ? msg.receiver_id : msg.sender_id;
-            const contactLink = document.querySelector(`a[data-user-id="${contactId}"]`);
-            if (contactLink) {
-                const sidebar = document.getElementById('sidebar-contacts');
-                sidebar.prepend(contactLink);
-                const container = contactLink.querySelector('.d-flex.align-items-center.text-truncate.w-75');
-                if (container) {
-                    const isSelf = msg.sender_id == {{ Auth::id() }};
-                    let checkHtml = '';
-                    if (isSelf) {
-                        const isOnline = onlineUsers.some(u => u.id == msg.receiver_id);
-                        checkHtml = isOnline 
-                            ? `<i class="fas fa-check-double text-muted mr-1 sidebar-check-${msg.receiver_id}" style="font-size: 10px;"></i>` 
-                            : `<i class="fas fa-check text-muted mr-1 sidebar-check-${msg.receiver_id}" style="font-size: 10px;"></i>`;
-                    }
-                    container.innerHTML = `${checkHtml}<p class="mb-0 text-sm text-muted text-truncate">${msg.message}</p>`;
-                }
-                const timeEl = contactLink.querySelector('small.text-muted');
-                if (timeEl) timeEl.innerText = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                @if(isset($user))
-                if (msg.sender_id != {{ $user->id }}) {
-                    updateBadge(contactLink);
-                }
-                @else
-                updateBadge(contactLink);
-                @endif
+                const headerDot = document.getElementById('header-status-dot');
+                statusText.innerText = isOnline ? 'Online' : 'Offline';
+                statusText.className = isOnline ? 'online' : '';
+                headerDot.classList.toggle('online', isOnline);
             }
         }
 
-        function updateBadge(contactLink) {
-            let badge = contactLink.querySelector('.badge-success');
-            if (!badge) {
-                const container = contactLink.querySelector('.d-flex.justify-content-between.align-items-center');
-                container.insertAdjacentHTML('beforeend', '<span class="badge badge-success badge-pill">1</span>');
-            } else {
-                badge.innerText = parseInt(badge.innerText) + 1;
-            }
+        function updateStatuses(users) {
+            users.forEach(u => updateStatus(u, true));
         }
     });
 </script>
-@stop
+@endsection
