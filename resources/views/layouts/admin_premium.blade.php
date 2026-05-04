@@ -444,6 +444,12 @@
                 <a href="{{ route('admin.pelaporan-index') }}" class="menu-item {{ request()->routeIs('admin.pelaporan*') ? 'active' : '' }}">
                     <i class="fas fa-file-alt"></i> Pelaporan
                 </a>
+                <form action="{{ route('logout') }}" method="POST" id="logout-form" style="display: none;">
+                    @csrf
+                </form>
+                <a href="#" class="menu-item" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" style="color: #991b1b; margin-top: 20px;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
             </nav>
         </aside>
 
@@ -462,6 +468,26 @@
             </div>
         </main>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    @vite(['resources/js/app.js'])
+    <script>
+        @if(Auth::check())
+        window.addEventListener('load', () => {
+            if (window.Echo) {
+                // Mark all received messages as delivered when connecting
+                axios.post('{{ route("chats.delivered.all") }}');
+
+                window.Echo.private('chat.{{ Auth::id() }}')
+                    .listen('.message.sent', (e) => {
+                        // If we are not actively reading this chat window
+                        if (!window.location.pathname.includes('/chats/' + e.message.sender_id)) {
+                            axios.post(`/chats/${e.message.sender_id}/delivered`);
+                        }
+                    });
+            }
+        });
+        @endif
+    </script>
     @yield('js')
 </body>
 </html>

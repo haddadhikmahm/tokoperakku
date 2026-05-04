@@ -82,5 +82,22 @@ class AuthController extends Controller
         return redirect()->route('profile')->with('status', 'Password berhasil diubah.');
     }
 
+    public function deleteAccount(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Don't allow deleting the main admin for safety in this demo
+        if ($user->username === 'admin_utama') {
+            return back()->withErrors(['error' => 'Admin utama tidak dapat dihapus.']);
+        }
+
+        $user->delete();
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/')->with('status', 'Akun anda telah dihapus.');
+    }
 
 }

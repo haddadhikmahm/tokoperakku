@@ -185,6 +185,29 @@
         font-weight: 700;
         cursor: pointer;
         flex: 1;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    body.dark-mode select,
+    body.dark-mode .slider {
+        background-color: #2a2a2a !important;
+        border-color: #444 !important;
+        color: #fff !important;
+    }
+    body.dark-mode .main-header {
+        background: #1e1e1e !important;
+        border-color: #333 !important;
+    }
+    body.dark-mode .logo { color: #fff !important; }
+    body.dark-mode .nav-link { color: #e4e4e7 !important; }
+    body.dark-mode .sidebar-link { color: #a1a1aa !important; }
+    body.dark-mode .sidebar-link:hover, 
+    body.dark-mode .sidebar-link.active {
+        background: #2a2a2a !important;
+        color: #fff !important;
     }
 </style>
 @endsection
@@ -198,10 +221,10 @@
             <i class="far fa-eye"></i> Ukuran Font
         </div>
         <div class="setting-control">
-            <select>
-                <option>Kecil</option>
-                <option selected>Sedang</option>
-                <option>Besar</option>
+            <select id="font-size-select">
+                <option value="small">Kecil</option>
+                <option value="medium" selected>Sedang</option>
+                <option value="large">Besar</option>
             </select>
         </div>
     </div>
@@ -211,7 +234,7 @@
         </div>
         <div class="setting-control">
             <label class="switch">
-                <input type="checkbox">
+                <input type="checkbox" id="dark-mode-toggle">
                 <span class="slider"></span>
             </label>
         </div>
@@ -222,7 +245,7 @@
         </div>
         <div class="setting-control">
             <label class="switch">
-                <input type="checkbox" checked>
+                <input type="checkbox" id="email-notif-toggle" checked>
                 <span class="slider"></span>
             </label>
         </div>
@@ -232,9 +255,9 @@
             <i class="fas fa-globe"></i> Bahasa
         </div>
         <div class="setting-control">
-            <select>
-                <option selected>Indonesia</option>
-                <option>English</option>
+            <select id="language-select">
+                <option value="id" selected>Indonesia</option>
+                <option value="en">English</option>
             </select>
         </div>
     </div>
@@ -257,7 +280,11 @@
         <p class="modal-text">Apakah anda yakin untuk menghapus akun?</p>
         <div class="modal-actions">
             <button class="btn-modal-no" id="btn-no">Tidak</button>
-            <button class="btn-modal-yes">Iya</button>
+            <form action="{{ route('account.delete') }}" method="POST" style="flex: 1; display: flex;">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn-modal-yes">Iya</button>
+            </form>
         </div>
     </div>
 </div>
@@ -266,20 +293,85 @@
 @section('js')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // --- Modal Logic ---
         const modal = document.getElementById('delete-modal');
         const btnOpen = document.getElementById('btn-open-delete');
         const btnClose = document.getElementById('btn-close-modal');
         const btnNo = document.getElementById('btn-no');
 
-        btnOpen.onclick = () => modal.style.display = 'flex';
-        btnClose.onclick = () => modal.style.display = 'none';
-        btnNo.onclick = () => modal.style.display = 'none';
+        if(btnOpen) btnOpen.onclick = () => modal.style.display = 'flex';
+        if(btnClose) btnClose.onclick = () => modal.style.display = 'none';
+        if(btnNo) btnNo.onclick = () => modal.style.display = 'none';
 
         window.onclick = (event) => {
             if (event.target == modal) {
                 modal.style.display = "none";
             }
         }
+
+        // --- Settings Logic ---
+        
+        // 1. Dark Mode
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const isDarkMode = localStorage.getItem('darkMode') === 'true';
+        
+        const applyDarkMode = (enabled) => {
+            if (enabled) {
+                document.body.classList.add('dark-mode');
+                darkModeToggle.checked = true;
+            } else {
+                document.body.classList.remove('dark-mode');
+                darkModeToggle.checked = false;
+            }
+        };
+
+        applyDarkMode(isDarkMode);
+
+        darkModeToggle.onchange = (e) => {
+            const enabled = e.target.checked;
+            localStorage.setItem('darkMode', enabled);
+            applyDarkMode(enabled);
+        };
+
+        // 2. Font Size
+        const fontSelect = document.getElementById('font-size-select');
+        const savedFont = localStorage.getItem('fontSize') || 'medium';
+
+        const applyFontSize = (size) => {
+            document.body.classList.remove('font-small', 'font-medium', 'font-large');
+            document.body.classList.add('font-' + size);
+            fontSelect.value = size;
+        };
+
+        applyFontSize(savedFont);
+
+        fontSelect.onchange = (e) => {
+            const size = e.target.value;
+            localStorage.setItem('fontSize', size);
+            applyFontSize(size);
+            window.location.reload();
+        };
+
+        // 3. Email Notifications
+        const notifToggle = document.getElementById('email-notif-toggle');
+        const isNotifOn = localStorage.getItem('emailNotif') !== 'false'; // default true
+        
+        notifToggle.checked = isNotifOn;
+        notifToggle.onchange = (e) => {
+            localStorage.setItem('emailNotif', e.target.checked);
+            alert('Pengaturan notifikasi berhasil disimpan!');
+        };
+
+        // 4. Language
+        const langSelect = document.getElementById('language-select');
+        const savedLang = localStorage.getItem('language') || 'id';
+
+        langSelect.value = savedLang;
+        langSelect.onchange = (e) => {
+            localStorage.setItem('language', e.target.value);
+            alert('Bahasa berhasil diubah ke ' + (e.target.value === 'id' ? 'Indonesia' : 'English'));
+            window.location.reload();
+        };
     });
 </script>
 @endsection

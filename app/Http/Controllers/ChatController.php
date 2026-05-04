@@ -43,7 +43,7 @@ class ChatController extends Controller
             ->get();
 
         foreach ($unreadMessages as $msg) {
-            $msg->update(['is_read' => true]);
+            $msg->update(['is_read' => true, 'is_delivered' => true]);
             broadcast(new \App\Events\MessageRead($msg))->toOthers();
         }
 
@@ -173,8 +173,38 @@ class ChatController extends Controller
             ->get();
 
         foreach ($unreadMessages as $msg) {
-            $msg->update(['is_read' => true]);
+            $msg->update(['is_read' => true, 'is_delivered' => true]);
             broadcast(new \App\Events\MessageRead($msg))->toOthers();
+        }
+
+        return response()->json(['status' => 'success']);
+    }
+    public function markAsDelivered(User $user)
+    {
+        $currentUser = Auth::user();
+        $undeliveredMessages = Chat::where('sender_id', $user->id)
+            ->where('receiver_id', $currentUser->id)
+            ->where('is_delivered', false)
+            ->get();
+
+        foreach ($undeliveredMessages as $msg) {
+            $msg->update(['is_delivered' => true]);
+            broadcast(new \App\Events\MessageDelivered($msg))->toOthers();
+        }
+
+        return response()->json(['status' => 'success']);
+    }
+
+    public function markAllAsDelivered()
+    {
+        $currentUser = Auth::user();
+        $undeliveredMessages = Chat::where('receiver_id', $currentUser->id)
+            ->where('is_delivered', false)
+            ->get();
+
+        foreach ($undeliveredMessages as $msg) {
+            $msg->update(['is_delivered' => true]);
+            broadcast(new \App\Events\MessageDelivered($msg))->toOthers();
         }
 
         return response()->json(['status' => 'success']);

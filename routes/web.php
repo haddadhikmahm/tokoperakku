@@ -86,6 +86,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('chats/{user}', [ChatController::class, 'show'])->name('chats.show');
     Route::post('chats', [ChatController::class, 'store'])->name('chats.store');
     Route::post('chats/{user}/read', [ChatController::class, 'markAsRead'])->name('chats.read');
+    Route::post('chats/{user}/delivered', [ChatController::class, 'markAsDelivered'])->name('chats.delivered');
+    Route::post('chats/delivered/all', [ChatController::class, 'markAllAsDelivered'])->name('chats.delivered.all');
+
+    // Account Deletion
+    Route::delete('account/delete', [AuthController::class, 'deleteAccount'])->name('account.delete');
 });
 
 // Admin & UMKM shared routes (Produk & Pelaporan)

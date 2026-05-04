@@ -142,9 +142,9 @@
 
         /* Main Content Layout */
         .main-container {
-            max-width: 1300px;
-            margin: 40px auto;
-            padding: 0 40px;
+            width: 100%;
+            margin: 40px 0;
+            padding: 0 80px;
             display: flex !important;
             align-items: flex-start;
             gap: 40px;
@@ -207,6 +207,99 @@
             .sidebar { width: 100%; }
             .nav-menu { gap: 20px; }
         }
+
+        /* Global Settings Classes */
+        body.font-small { --base-font-size: 12px; }
+        body.font-medium { --base-font-size: 15px; }
+        body.font-large { --base-font-size: 19px; }
+
+        body.font-small .nav-link, body.font-small .sidebar-link { font-size: 11px !important; }
+        body.font-medium .nav-link, body.font-medium .sidebar-link { font-size: 14px !important; }
+        body.font-large .nav-link, body.font-large .sidebar-link { font-size: 18px !important; }
+
+        body.font-small .logo { font-size: 20px !important; }
+        body.font-large .logo { font-size: 32px !important; }
+
+        body.dark-mode {
+            background-color: #121212 !important;
+            color: #e4e4e7 !important;
+        }
+        body.dark-mode .main-header,
+        body.dark-mode .sidebar {
+            background: #1e1e1e !important;
+            border-color: #333 !important;
+        }
+        body.dark-mode .logo,
+        body.dark-mode .user-name {
+            color: #fff !important;
+        }
+        body.dark-mode .nav-link { color: #e4e4e7 !important; }
+        body.dark-mode .sidebar-link { color: #a1a1aa !important; }
+        body.dark-mode .sidebar-link:hover, 
+        body.dark-mode .sidebar-link.active {
+            background: #2a2a2a !important;
+            color: #fff !important;
+        }
+        body.dark-mode .search-input {
+            background: #2a2a2a !important;
+            border-color: #444 !important;
+            color: #fff !important;
+        }
+
+        /* Profile Dropdown Styles */
+        .user-profile-trigger {
+            position: relative;
+        }
+        .profile-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            width: 180px;
+            display: none;
+            z-index: 1000;
+            margin-top: 15px;
+            padding: 8px;
+            animation: slideDown 0.2s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .profile-dropdown.show {
+            display: block;
+        }
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 15px;
+            text-decoration: none !important;
+            color: var(--text-main) !important;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .dropdown-item:hover {
+            background: #f4f4f5;
+        }
+        .dropdown-item i {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        body.dark-mode .profile-dropdown {
+            background: #1e1e1e;
+            border-color: #333;
+        }
+        body.dark-mode .dropdown-item:hover {
+            background: #2a2a2a;
+        }
     </style>
     @yield('css')
 </head>
@@ -224,12 +317,28 @@
                 <a href="#" class="action-link"><i class="far fa-heart"></i></a>
                 <a href="{{ route('chats.index') }}" class="action-link"><i class="far fa-comment-dots"></i></a>
                 
-                <div class="user-profile-trigger">
+                <div class="user-profile-trigger" id="profileTrigger">
                     <div class="avatar-circle">
                         <img src="{{ Auth::user()->foto ? asset('storage/'.Auth::user()->foto) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->username).'&background=e4e4e7&color=71717a' }}" alt="">
                     </div>
                     <span class="user-name">{{ Auth::user()->username }}</span>
                     <i class="fas fa-chevron-down" style="font-size: 10px; color: #a1a1aa;"></i>
+
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <a href="{{ route('profile') }}" class="dropdown-item">
+                            <i class="far fa-user"></i> Profil Saya
+                        </a>
+                        <a href="{{ route('pengaturan') }}" class="dropdown-item">
+                            <i class="fas fa-cog"></i> Pengaturan
+                        </a>
+                        <hr style="margin: 8px 0; border: 0; border-top: 1px solid var(--border-color);">
+                        <form action="{{ route('logout') }}" method="POST" id="logout-form-header">
+                            @csrf
+                            <button type="submit" class="dropdown-item w-100 border-0 bg-transparent text-left" style="color: #ef4444 !important; cursor: pointer;">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -274,6 +383,99 @@
         </section>
     </main>
 
+    <script>
+        // Apply settings immediately to prevent flicker
+        (function() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) document.body.classList.add('dark-mode');
+            
+            const savedFont = localStorage.getItem('fontSize') || 'medium';
+            document.body.classList.add('font-' + savedFont);
+
+            // Translation Dictionary
+            const translations = {
+                en: {
+                    "Beranda": "Home",
+                    "Katalog": "Catalog",
+                    "Kategori": "Categories",
+                    "Tentang Kami": "About Us",
+                    "Kontak": "Contact",
+                    "Profil": "Profile",
+                    "Chat": "Chat",
+                    "Favorit": "Favorites",
+                    "Pengaturan": "Settings",
+                    "Cari Produk": "Search Products",
+                    "Ukuran Font": "Font Size",
+                    "Mode Gelap": "Dark Mode",
+                    "Notifikasi Email": "Email Notifications",
+                    "Bahasa": "Language",
+                    "Hapus Akun": "Delete Account",
+                    "Kecil": "Small",
+                    "Sedang": "Medium",
+                    "Besar": "Large",
+                    "Apakah anda yakin untuk menghapus akun?": "Are you sure you want to delete your account?",
+                    "Tidak": "No",
+                    "Iya": "Yes"
+                }
+            };
+
+            const savedLang = localStorage.getItem('language') || 'id';
+            if (savedLang === 'en') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    const dict = translations.en;
+                    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+                    let node;
+                    while (node = walk.nextNode()) {
+                        const trimmed = node.nodeValue.trim();
+                        if (dict[trimmed]) {
+                            node.nodeValue = node.nodeValue.replace(trimmed, dict[trimmed]);
+                        }
+                    }
+                    // Special case for placeholders
+                    document.querySelectorAll('[placeholder]').forEach(el => {
+                        if (dict[el.placeholder]) el.placeholder = dict[el.placeholder];
+                    });
+                });
+            }
+
+            // Profile Dropdown Toggle
+            document.addEventListener('DOMContentLoaded', () => {
+                const trigger = document.getElementById('profileTrigger');
+                const dropdown = document.getElementById('profileDropdown');
+
+                if (trigger && dropdown) {
+                    trigger.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        dropdown.classList.toggle('show');
+                    });
+
+                    document.addEventListener('click', () => {
+                        dropdown.classList.remove('show');
+                    });
+                }
+            });
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    @vite(['resources/js/app.js'])
+    <script>
+        @if(Auth::check())
+        window.addEventListener('load', () => {
+            if (window.Echo) {
+                // Mark all received messages as delivered when connecting
+                axios.post('{{ route("chats.delivered.all") }}');
+
+                window.Echo.private('chat.{{ Auth::id() }}')
+                    .listen('.message.sent', (e) => {
+                        // If we are not actively reading this chat window
+                        if (!window.location.pathname.includes('/chats/' + e.message.sender_id)) {
+                            axios.post(`/chats/${e.message.sender_id}/delivered`);
+                        }
+                    });
+            }
+        });
+        @endif
+    </script>
     @yield('js')
 </body>
 </html>
