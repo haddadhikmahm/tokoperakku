@@ -13,9 +13,16 @@ class PageController extends Controller
 {
     public function index()
     {
-        $produks = Produk::with('kategoriProduk', 'fotoProduk')->get();
+        $kategoris = KategoriProduk::all();
+        $randomProduks = Produk::with(['fotoProduk', 'reviews'])->latest()->take(8)->get();
+        $pengerajins = \App\Models\Pengerajin::inRandomOrder()->take(8)->get();
+        $usahas = \App\Models\Usaha::inRandomOrder()->take(6)->get();
+
         return view('guest.pages.index', [
-            'produks' => $produks,
+            'kategoris' => $kategoris,
+            'randomProduks' => $randomProduks,
+            'pengerajins' => $pengerajins,
+            'usahas' => $usahas,
         ]);
     }
 
@@ -33,7 +40,7 @@ class PageController extends Controller
     public function katalog(Request $request)
     {
         // Memuat relasi yang dibutuhkan untuk efisiensi
-        $query = Produk::with('kategoriProduk', 'fotoProduk');
+        $query = Produk::with(['kategoriProduk', 'fotoProduk', 'reviews']);
 
         // -- LOGIKA PENCARIAN (SEARCH) --
         if ($request->filled('search')) {
@@ -88,15 +95,36 @@ class PageController extends Controller
 
     public function singleProduct($slug)
     {
-        $produk = Produk::where('slug', $slug)->firstOrFail();
-        return view('guest.pages.single-product',[
+        $produk = Produk::with(['fotoProduk', 'usaha', 'reviews.user'])->where('slug', $slug)->firstOrFail();
+        
+        $reviewsCount = $produk->reviews->count();
+        $averageRating = $reviewsCount > 0 ? round($produk->reviews->avg('rating'), 1) : 0;
+        
+        // Hitung persentase bar rating
+        $ratingStats = [
+            5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0
+        ];
+        
+        if ($reviewsCount > 0) {
+            foreach ($produk->reviews as $review) {
+                $ratingStats[$review->rating]++;
+            }
+        }
+
+        $randomProduks = Produk::with(['fotoProduk', 'reviews'])->where('id', '!=', $produk->id)->inRandomOrder()->take(4)->get();
+
+        return view('guest.pages.single-product', [
             'produk' => $produk,
+            'reviewsCount' => $reviewsCount,
+            'averageRating' => $averageRating,
+            'ratingStats' => $ratingStats,
+            'randomProduks' => $randomProduks,
         ]);
     }
 
     public function detailUsaha(Request $request, Usaha $usaha)
     {
-        $usaha->load('pengerajins', 'produks');
+        $usaha->load('pengerajins', 'produks.fotoProduk', 'produks.reviews');
         $previousProduct = null;
 
         if ($request->has('from_product')) {

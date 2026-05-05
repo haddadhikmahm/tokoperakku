@@ -59,20 +59,35 @@
 <script>
     const ctx = document.getElementById('omsetChart').getContext('2d');
     
-    // Mock data for display - in real app would use $data passed from controller
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const values = [700, 900, 500, 1200, 1400, 350, 200, 1700, 1000, 1500, 350, 700];
+    // Map Indonesian months to Chart.js labels
+    const monthMap = {
+        'Januari': 0, 'Februari': 1, 'Maret': 2, 'April': 3, 'Mei': 4, 'Juni': 5,
+        'Juli': 6, 'Agustus': 7, 'September': 8, 'Oktober': 9, 'November': 10, 'Desember': 11
+    };
     
+    const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const values = new Array(12).fill(0);
+    
+    // Fill values from database data
+    @foreach($data as $d)
+        if (monthMap['{{ $d->bulan }}'] !== undefined) {
+            values[monthMap['{{ $d->bulan }}']] += {{ (float)$d->omset }};
+        }
+    @endforeach
+    
+    // Find index for highlight (e.g. current month or highest)
+    const currentMonthIndex = new Date().getMonth();
+
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: months,
+            labels: labels,
             datasets: [{
                 label: 'Omset',
                 data: values,
                 backgroundColor: (context) => {
                     const index = context.dataIndex;
-                    return index === 7 ? '#fecaca' : '#f3f4f6'; // Aug is red in screenshot
+                    return index === currentMonthIndex ? '#fecaca' : '#f3f4f6';
                 },
                 borderRadius: 8,
                 borderSkipped: false,
@@ -83,7 +98,21 @@
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(context.parsed.y);
+                            }
+                            return label;
+                        }
+                    }
+                }
             },
             scales: {
                 y: {
@@ -93,8 +122,10 @@
                         color: '#f3f4f6'
                     },
                     ticks: {
-                        stepSize: 200,
-                        color: '#9ca3af'
+                        color: '#9ca3af',
+                        callback: function(value) {
+                            return 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
+                        }
                     }
                 },
                 x: {

@@ -34,7 +34,12 @@ class UsahaController extends Controller
 
     public function create()
     {
-        $wilayahs = Wilayah::all();
+        $user = Auth::user();
+        if ($user->role === 'admin_wilayah') {
+            $wilayahs = Wilayah::where('id', $user->wilayah_id)->get();
+        } else {
+            $wilayahs = Wilayah::all();
+        }
         $pengerajins = Pengerajin::all();
         
         $lastUsaha = Usaha::orderBy('id', 'desc')->first();
@@ -46,8 +51,18 @@ class UsahaController extends Controller
 
     public function edit($id)
     {
+        $user = Auth::user();
         $usaha = Usaha::with('user')->findOrFail($id);
-        $wilayahs = Wilayah::all();
+        
+        if ($user->role === 'admin_wilayah') {
+            if ($usaha->wilayah_id != $user->wilayah_id) {
+                abort(403, 'Unauthorized action.');
+            }
+            $wilayahs = Wilayah::where('id', $user->wilayah_id)->get();
+        } else {
+            $wilayahs = Wilayah::all();
+        }
+        
         $pengerajins = Pengerajin::all();
         return view('admin.usaha.edit-usaha', compact('usaha', 'wilayahs', 'pengerajins'));
     }

@@ -7,6 +7,16 @@ use Illuminate\Http\Request;
 
 class AdminManageController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->role !== 'admin_utama') {
+                abort(403, 'Akses terbatas hanya untuk Admin Utama.');
+            }
+            return $next($request);
+        });
+    }
+
     /**
      * Display a listing of the resource.
      */

@@ -16,12 +16,37 @@ class ReviewController extends Controller
             'comment' => 'nullable|string',
         ]);
 
-        Review::create([
+        $existing = Review::where('user_id', Auth::id())
+                          ->where('produk_id', $request->produk_id)
+                          ->first();
+
+        if ($existing) {
+            if ($request->ajax()) {
+                return response()->json(['error' => 'Anda sudah memberikan ulasan untuk produk ini.'], 422);
+            }
+            return back()->with('error', 'Anda sudah memberikan ulasan untuk produk ini.');
+        }
+
+        $review = Review::create([
             'user_id' => Auth::id(),
             'produk_id' => $request->produk_id,
             'rating' => $request->rating,
             'comment' => $request->comment,
         ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Ulasan berhasil dikirim.',
+                'review' => [
+                    'username' => Auth::user()->username,
+                    'rating' => $review->rating,
+                    'comment' => $review->comment,
+                    'date' => $review->created_at->diffForHumans(),
+                    'initials' => strtoupper(substr(Auth::user()->username, 0, 2))
+                ]
+            ]);
+        }
 
         return back()->with('success', 'Ulasan berhasil dikirim.');
     }

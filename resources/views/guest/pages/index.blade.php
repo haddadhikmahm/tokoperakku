@@ -90,14 +90,18 @@
                             <div class="thumb">
                                 <img src="{{ asset('storage/' . optional($produk->fotoProduk->first())->file_foto_produk) }}"
                                     alt="{{ $produk->nama_produk }}"
-                                    onerror="this.onerror=null;this.src='{{ asset('images/produk-default.jpg') }}';">
+                                    onerror="this.onerror=null;this.src='{{ asset('assets/images/produk-default.jpg') }}';">
                             </div>
                             <div class="down-content">
                                 <h4>{{ $produk->nama_produk }}</h4>
                                 <span class="product-price">Rp {{ number_format($produk->harga, 0, ',', '.') }}</span>
                                 <ul class="stars">
-                                    @for ($i = 0; $i < 5; $i++)
-                                        <li><i class="fa fa-star"></i></li>
+                                    @php
+                                        $avgRating = $produk->reviews->avg('rating') ?: 0;
+                                        $fullStars = floor($avgRating);
+                                    @endphp
+                                    @for ($i = 1; $i <= 5; $i++)
+                                        <li><i class="fa fa-star{{ $i <= $fullStars ? '' : '-o' }}"></i></li>
                                     @endfor
                                 </ul>
                                 <p class="product-reviews">20 Reviews</p>
@@ -117,41 +121,73 @@
 </section>
     <!-- ***** Produk Area Ends ***** -->
 
-    <!-- ***** Pengrajin's Area Ends ***** -->
-<!-- <section class="pengrajins-section">
+    <!-- ***** Pengrajin's Area Starts ***** -->
+<section class="pengrajins-section">
     <div class="container">
         <div class="row mt-2">
             <div class="col-lg-12">
                 <div class="section-heading">
                     <h2>Temukan Pengrajin Kesukaanmu!</h2>
-                    <span>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text.</span>
+                    <p class="text-muted">Kenali tangan-tangan terampil di balik keindahan perak Kotagede</p>
                 </div>
             </div>
         </div>
         
         <div class="row">
-            @for ($i = 0; $i < 8; $i++)
+            @foreach ($pengerajins as $pengerajin)
             <div class="col-lg-3 col-sm-6 mb-4">
                 <div class="pengrajin-card">
                     <div class="pengrajin-thumb">
-                        <img src="{{ asset('assets/images/kategori-default.jpg') }}" alt="Foto Pengrajin">
+                        <img src="{{ $pengerajin->foto_pengerajin ? asset('storage/' . $pengerajin->foto_pengerajin) : asset('assets/images/kategori-default.jpg') }}" 
+                             alt="{{ $pengerajin->nama_pengerajin }}"
+                             onerror="this.onerror=null;this.src='{{ asset('assets/images/kategori-default.jpg') }}';">
                     </div>
                     <div class="pengrajin-info">
-                        <h5 class="pengrajin-name">Nama Pengrajin {{ $i + 1 }}</h5>
-                        <p class="pengrajin-spesialisasi">Spesialisasi Kerajinan</p>
+                        <h5 class="pengrajin-name">{{ $pengerajin->nama_pengerajin }}</h5>
+                        <p class="pengrajin-spesialisasi">{{ $pengerajin->jk_pengerajin == 'P' ? 'Pria' : 'Wanita' }}, {{ $pengerajin->usia_pengerajin }} Tahun</p>
                     </div>
                 </div>
             </div>
-            @endfor
+            @endforeach
         </div>
 
         <div class="col-lg-12">
             <div class="text-center mt-2">
-                <a href="#" class="see-all-button btn">Lihat Semua</a>
+                <a href="{{ route('guest-katalog') }}" class="see-all-button btn">Lihat Katalog Produk</a>
             </div>
         </div>
     </div>
-</section> -->
+</section>
+
+<!-- ***** Usaha/Toko Section ***** -->
+<section class="products" style="background-color: #fff; padding-top: 0;">
+    <div class="container">
+        <div class="section-heading">
+            <h2>Toko & Usaha Perak</h2>
+            <span>Kunjungi toko-toko perak terbaik di Kotagede</span>
+        </div>
+        <div class="row">
+            @foreach ($usahas as $usaha)
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="product-item">
+                    <a href="{{ route('guest-detail-usaha', $usaha->id) }}">
+                        <div class="thumb">
+                            <img src="{{ $usaha->foto_usaha ? asset('storage/' . $usaha->foto_usaha) : asset('assets/images/kategori-default.jpg') }}" 
+                                 alt="{{ $usaha->nama_usaha }}"
+                                 onerror="this.onerror=null;this.src='{{ asset('assets/images/kategori-default.jpg') }}';">
+                        </div>
+                        <div class="down-content">
+                            <h4>{{ $usaha->nama_usaha }}</h4>
+                            <span class="product-price">{{ $usaha->wilayah->nama_wilayah ?? 'Kotagede' }}</span>
+                            <p class="product-reviews">{{ $usaha->produks_count ?? $usaha->produks->count() }} Produk Tersedia</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+</section>
 
 <section class="about-us">
     <div class="container">

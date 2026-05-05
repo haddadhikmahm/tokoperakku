@@ -429,9 +429,17 @@
                 </div>
             </div>
             <nav class="sidebar-menu">
+                <a href="{{ route('admin.dashboard') }}" class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
                 <a href="{{ route('profile') }}" class="menu-item {{ request()->routeIs('profile*') ? 'active' : '' }}">
                     <i class="far fa-user"></i> Profil
                 </a>
+@if(auth()->user()->role == 'admin_utama')
+                <a href="{{ route('admin.manage.index') }}" class="menu-item {{ request()->routeIs('admin.manage.*') ? 'active' : '' }}">
+                    <i class="fas fa-user-shield"></i> Kelola Admin
+                </a>
+@endif
                 <a href="{{ route('admin.pengerajin-index') }}" class="menu-item {{ request()->routeIs('admin.pengerajin*') ? 'active' : '' }}">
                     <i class="fas fa-users"></i> Pengrajin
                 </a>
@@ -457,7 +465,7 @@
             <header class="header">
                 <div class="user-nav">
                     <div class="user-avatar">
-                        <img src="{{ asset('assets/images/admin-avatar.png') }}" alt="User">
+                        <img src="{{ Auth::user()->foto ? asset('storage/'.Auth::user()->foto) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->username).'&background=e4e4e7&color=71717a' }}" alt="User">
                     </div>
                     <span class="user-name">{{ Auth::user()->username }} <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 5px; color: #888;"></i></span>
                 </div>

@@ -4,73 +4,113 @@
 
 @section('css')
 <style>
-    body { background-color: #111b21 !important; color: #e9edef !important; }
+    :root {
+        --chat-bg: #f8f9fa;
+        --chat-sidebar-bg: #ffffff;
+        --chat-header-bg: #ffffff;
+        --chat-contact-hover: #f8f9fa;
+        --chat-contact-active: #f0f2f5;
+        --chat-window-bg: #fdfdfd;
+        --chat-msg-other: #f0f2f5;
+        --chat-msg-self: #fff0f0;
+        --chat-text: #1a1a1a;
+        --chat-text-muted: #71717a;
+        --chat-border: #e4e4e7; /* More distinct border */
+        --chat-input-bg: #ffffff;
+        --chat-header-text: #1a1a1a;
+        --chat-divider-bg: #ffffff;
+        --chat-accent: #ef4444;
+    }
+
+    body.dark-mode {
+        --chat-bg: #0f0f0f;
+        --chat-sidebar-bg: #1a1a1a;
+        --chat-header-bg: #1a1a1a;
+        --chat-contact-hover: #242424;
+        --chat-contact-active: #2d2d2d;
+        --chat-window-bg: #121212;
+        --chat-msg-other: #2d2d2d;
+        --chat-msg-self: #451a1a;
+        --chat-text: #e4e4e7;
+        --chat-text-muted: #a1a1aa;
+        --chat-border: #3f3f46;
+        --chat-input-bg: #242424;
+        --chat-header-text: #ffffff;
+        --chat-divider-bg: #1a1a1a;
+        --chat-accent: #f87171;
+    }
+
+    body { background-color: var(--chat-bg) !important; color: var(--chat-text) !important; overflow-x: hidden; }
+    
+    /* Override layout margins to lift chat higher */
+    .main-container { margin-top: 15px !important; margin-bottom: 15px !important; min-height: auto !important; }
+
     .chat-container {
         display: flex;
-        background: #111b21;
-        border-radius: 0;
+        background: var(--chat-sidebar-bg);
+        border-radius: 12px;
         overflow: hidden;
-        border: none;
-        height: calc(100vh - 80px);
+        border: 1px solid var(--chat-border);
+        height: calc(100vh - 210px); /* Adjusted to prevent page scroll */
         min-height: 500px;
-        margin-top: 0 !important;
-        box-shadow: none;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
     /* Contacts Sidebar */
     .contacts-sidebar {
-        width: 30%;
-        min-width: 300px;
-        border-right: 1px solid #222d34;
+        width: 320px;
+        flex-shrink: 0;
+        border-right: 1px solid var(--chat-border);
         display: flex;
         flex-direction: column;
-        background: #111b21;
+        background: var(--chat-sidebar-bg);
     }
 
     .sidebar-header { 
-        padding: 10px 15px; 
-        background: #202c33; 
+        padding: 15px 20px; 
+        background: var(--chat-header-bg); 
         display: flex; 
-        align-items: center; 
-        height: 60px;
+        flex-direction: column;
+        gap: 12px;
+        border-bottom: 1px solid var(--chat-border);
     }
     
-    .sidebar-header h2 { font-size: 16px; font-weight: 600; margin: 0; color: #e9edef; }
+    .sidebar-header h2 { font-size: 18px; font-weight: 700; margin: 0; color: var(--chat-header-text); }
     
-    .search-box { position: relative; margin: 8px 12px; }
+    .search-box { position: relative; }
     .search-box input { 
-        width: 100%; padding: 7px 15px 7px 40px; 
-        border-radius: 8px; border: none; 
-        background: #202c33; color: #e9edef; 
-        font-size: 14px; outline: none; 
+        width: 100%; padding: 8px 15px 8px 40px; 
+        border-radius: 10px; border: 1px solid var(--chat-border); 
+        background: var(--chat-bg); color: var(--chat-text); 
+        font-size: 13px; outline: none; transition: all 0.2s;
     }
-    .search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #8696a0; font-size: 12px;}
+    .search-box input:focus { border-color: var(--chat-accent); }
+    .search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--chat-text-muted); font-size: 13px;}
 
-    .contact-list { flex: 1; overflow-y: auto; background: #111b21; }
+    .contact-list { flex: 1; overflow-y: auto; background: var(--chat-sidebar-bg); }
     .contact-item { 
-        display: flex; align-items: center; gap: 15px; 
-        padding: 10px 15px; text-decoration: none; color: inherit; 
-        border-bottom: 1px solid #222d34; transition: background 0.2s;
+        display: flex; align-items: center; gap: 12px; 
+        padding: 12px 20px; text-decoration: none; color: inherit; 
+        border-bottom: 1px solid var(--chat-border); transition: all 0.2s;
     }
-    .contact-item:hover { background: #202c33; }
-    .contact-item.active { background: #2a3942; }
+    .contact-item:hover { background: var(--chat-contact-hover); }
+    .contact-item.active { background: var(--chat-contact-active); border-left: 4px solid var(--chat-accent); }
     
     .avatar-wrapper { position: relative; flex-shrink: 0; }
-    .avatar-img { width: 49px; height: 49px; border-radius: 50%; object-fit: cover; }
-    .status-dot { display: none; }
+    .avatar-img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid var(--chat-border); }
     
     .contact-info { flex: 1; min-width: 0; }
-    .contact-name-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
-    .contact-name { font-size: 16px; font-weight: 400; color: #e9edef; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .chat-time { font-size: 12px; color: #8696a0; }
-    .last-msg { font-size: 13px; color: #8696a0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .contact-name-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+    .contact-name { font-size: 14px; font-weight: 600; color: var(--chat-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-time { font-size: 11px; color: var(--chat-text-muted); }
+    .last-msg { font-size: 12px; color: var(--chat-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* Main Chat Window */
     .chat-window {
         flex: 1;
         display: flex;
         flex-direction: column;
-        background: #0b141a;
+        background: var(--chat-window-bg);
         position: relative;
     }
     .chat-window::before {
@@ -79,135 +119,132 @@
         top: 0; left: 0; right: 0; bottom: 0;
         background-image: url('https://static.whatsapp.net/rsrc.php/v3/yl/r/rPj_wJ_Q4V0.png');
         background-repeat: repeat;
-        opacity: 0.06;
+        opacity: 0.03;
         z-index: 0;
+        pointer-events: none;
     }
 
     .chat-header {
-        padding: 10px 15px;
-        background: #202c33;
+        padding: 10px 25px;
+        background: var(--chat-header-bg);
         display: flex;
         align-items: center;
         gap: 15px;
         height: 60px;
         z-index: 1;
+        border-bottom: 1px solid var(--chat-border);
     }
 
-    .header-info h4 { margin: 0; font-size: 16px; font-weight: 500; color: #e9edef; }
-    .header-info span { font-size: 13px; color: #8696a0; }
+    .header-info h4 { margin: 0; font-size: 15px; font-weight: 700; color: var(--chat-header-text); }
+    .header-info span { font-size: 12px; font-weight: 600; }
+    .header-info span.online { color: #22c55e; }
+    .header-info span.offline { color: var(--chat-text-muted); }
 
     .messages-area {
         flex: 1;
         overflow-y: auto;
-        padding: 20px 6%;
+        padding: 20px 4%;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 10px;
         z-index: 1;
     }
 
     .message-row {
         display: flex;
         flex-direction: column;
-        max-width: 65%;
+        max-width: 75%;
     }
 
     .message-row.self { align-self: flex-end; }
     .message-row.other { align-self: flex-start; }
 
     .message-content {
-        padding: 6px 9px 8px 9px;
-        border-radius: 7.5px;
-        font-size: 14.2px;
-        line-height: 19px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.4;
         position: relative;
-        box-shadow: 0 1px 0.5px rgba(11,20,26,.13);
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-end;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
     .other .message-content {
-        background: #202c33;
-        color: #e9edef;
-        border-top-left-radius: 0;
+        background: var(--chat-msg-other);
+        color: var(--chat-text);
+        border-bottom-left-radius: 2px;
     }
 
     .self .message-content {
-        background: #005c4b;
-        color: #e9edef;
-        border-top-right-radius: 0;
+        background: var(--chat-msg-self);
+        color: var(--chat-text);
+        border-bottom-right-radius: 2px;
+        border: 1px solid rgba(239, 68, 68, 0.1);
     }
     
-    .message-text {
-        flex: 1 1 auto;
-        word-break: break-word;
-    }
+    .message-text { word-break: break-word; }
 
     .message-time {
-        font-size: 11px;
-        color: rgba(255,255,255,0.6);
-        margin-left: 12px;
-        margin-bottom: -4px;
+        font-size: 10px;
+        color: var(--chat-text-muted);
+        margin-top: 3px;
         display: flex;
         align-items: center;
-        gap: 4px;
-        float: right;
+        gap: 3px;
+        justify-content: flex-end;
     }
 
     .input-bar {
-        padding: 10px 15px;
-        background: #202c33;
+        padding: 12px 20px;
+        background: var(--chat-header-bg);
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 12px;
         z-index: 1;
-        border-top: none;
+        border-top: 1px solid var(--chat-border);
     }
 
     .attachment-btn {
-        color: #8696a0;
-        font-size: 22px;
+        color: var(--chat-text-muted);
+        font-size: 18px;
         cursor: pointer;
-        padding: 5px;
     }
 
-    .input-wrapper { flex: 1; position: relative; }
+    .input-wrapper { flex: 1; }
 
     .message-input {
         width: 100%;
-        padding: 9px 15px;
-        border-radius: 8px;
-        border: none;
-        background: #2a3942;
-        color: #e9edef;
-        font-size: 15px;
+        padding: 10px 18px;
+        border-radius: 20px;
+        border: 1px solid var(--chat-border);
+        background: var(--chat-bg);
+        color: var(--chat-text);
+        font-size: 14px;
         outline: none;
     }
+    .message-input:focus { border-color: var(--chat-accent); background: var(--chat-sidebar-bg); }
 
     .send-btn {
-        color: #8696a0;
+        color: var(--chat-accent);
         background: none;
         border: none;
         cursor: pointer;
-        padding: 5px;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 5px 8px;
+        text-transform: lowercase;
     }
 
-    .date-divider { text-align: center; margin: 12px 0; z-index: 1;}
-    .date-divider::before { display: none; }
+    .date-divider { text-align: center; margin: 15px 0; z-index: 1; }
     .date-divider span {
-        background: #182229;
-        padding: 5px 12px;
-        font-size: 12.5px;
-        color: #8696a0;
-        border-radius: 8px;
-        box-shadow: 0 1px 0.5px rgba(11,20,26,.13);
-        text-transform: capitalize;
-        font-weight: 500;
+        background: var(--chat-divider-bg);
+        padding: 3px 12px;
+        font-size: 11px;
+        color: var(--chat-text-muted);
+        border-radius: 15px;
+        border: 1px solid var(--chat-border);
+        font-weight: 600;
     }
-    
-    .text-primary { color: #53bdeb !important; } /* Blue ticks */
-    .text-secondary { color: #8696a0 !important; } /* Gray ticks */
+</style>
 </style>
 @endsection
 
@@ -265,15 +302,23 @@
             </div>
             <div class="header-info">
                 <h4>{{ $user->role === 'umkm' && $user->usaha ? $user->usaha->nama_usaha : $user->username }}</h4>
-                <span id="user-status">Offline</span>
+                <span id="user-status" class="offline">
+                    @if($user->last_seen_at)
+                        Terakhir dilihat {{ $user->last_seen_at->diffForHumans() }}
+                    @else
+                        Offline
+                    @endif
+                </span>
             </div>
         </div>
 
-        <div class="messages-area" id="message-container">
+        <div class="messages-area" id="message-container" style="display: flex; flex-direction: column; height: 100%;">
             @if($messages->isEmpty())
-                <div class="d-flex flex-column align-items-center justify-content-center h-100 w-100 text-muted" id="empty-chat-state">
-                    <i class="far fa-comments mb-3" style="font-size: 48px; opacity: 0.2;"></i>
-                    <p>Mulai percakapan dengan {{ $user->username }}</p>
+                <div class="text-muted" id="empty-chat-state" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+                    <div class="text-center">
+                        <i class="far fa-comments mb-3" style="font-size: 64px; opacity: 0.1;"></i>
+                        <h5 class="mb-2" style="font-weight: 600; color: var(--chat-text);">Mulai Percakapan</h5>
+                    </div>
                 </div>
             @endif
 
@@ -331,7 +376,7 @@
             <div class="input-wrapper">
                 <input type="text" name="message" id="message-input" placeholder="Ketik sesuatu" class="message-input" autocomplete="off">
             </div>
-            <button type="submit" class="send-btn"><i class="fas fa-paper-plane"></i></button>
+            <button type="submit" class="send-btn">kirim</button>
         </form>
     </div>
 </div>
@@ -441,7 +486,7 @@
             if (emptyState) emptyState.remove();
 
             const sideClass = isSelf ? 'self' : 'other';
-            const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const time = new Date(msg.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
             
             let check = '';
             if (isSelf) {
@@ -485,9 +530,15 @@
             if (user.id == {{ $user->id }}) {
                 const statusText = document.getElementById('user-status');
                 const headerDot = document.getElementById('header-status-dot');
-                statusText.innerText = isOnline ? 'Online' : 'Offline';
-                statusText.className = isOnline ? 'online' : '';
-                headerDot.classList.toggle('online', isOnline);
+                if (isOnline) {
+                    statusText.innerText = 'Online';
+                    statusText.className = 'online';
+                    headerDot.classList.add('online');
+                } else {
+                    statusText.innerText = 'Terakhir dilihat baru saja';
+                    statusText.className = 'offline';
+                    headerDot.classList.remove('online');
+                }
             }
         }
 

@@ -24,12 +24,19 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Route::aliasMiddleware('role', RoleCheck::class);
         \Illuminate\Pagination\Paginator::useBootstrapFive();
 
+        \Illuminate\Support\Facades\View::composer(['guest.layouts.main', 'layouts.user', 'layouts.umkm', 'layouts.admin_premium'], function ($view) {
+            $view->with('kategoris', \App\Models\KategoriProduk::all());
+            $view->with('randomKategoris', \App\Models\KategoriProduk::inRandomOrder()->get());
+        });
+
         \Illuminate\Support\Facades\Event::listen(\JeroenNoten\LaravelAdminLte\Events\BuildingMenu::class, function (\JeroenNoten\LaravelAdminLte\Events\BuildingMenu $event) {
             $user = \Illuminate\Support\Facades\Auth::user();
 
             if (!$user) {
                 return;
             }
+            
+            // ... rest of the code remains same
 
             // Dynamic User Menu in Top Navbar
             $event->menu->add([

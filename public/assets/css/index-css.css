@@ -72,6 +72,41 @@ header.shadow-sm.fixed-top {
     transition: all 0.3s ease;
 }
 
+.avatar-circle {
+    width: 35px;
+    height: 35px;
+    background-color: #980808;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: 0 2px 10px rgba(152, 8, 8, 0.2);
+}
+
+.user-dropdown-menu {
+    border-radius: 15px !important;
+    border: none !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1) !important;
+    padding: 10px !important;
+    min-width: 200px !important;
+}
+
+.user-dropdown-item {
+    border-radius: 10px !important;
+    padding: 10px 15px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s !important;
+}
+
+.user-dropdown-item:hover {
+    background-color: #f8f9fa !important;
+    color: #980808 !important;
+    transform: translateX(5px);
+}
+
 .d-flex div a:hover {
     background-color: #eceef0;
     color: #980808 !important;

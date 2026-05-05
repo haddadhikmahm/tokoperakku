@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
     <meta name="author" content="">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900&display=swap"
         rel="stylesheet">
 
@@ -22,6 +23,18 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet" />
+    
+    {{-- Axios and CSRF Setup --}}
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+        let token = document.head.querySelector('meta[name="csrf-token"]');
+        if (token) {
+            axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
+        } else {
+            console.error('CSRF token not found');
+        }
+    </script>
     
     <link rel="stylesheet" href="{{ asset('assets/css/index-css.css') }}">
     @stack('styles')
@@ -54,17 +67,45 @@
                     <input class="form-control" type="search" name="search" placeholder="Cari produk atau kategori..." value="{{ request('search') }}">
                 </form>
 
-                <!-- Login / Logout -->
-                <div>
+                <!-- User Account Section -->
+                <div class="d-flex align-items-center gap-3">
                     @auth
-                        <form action="{{ route('logout') }}" method="POST" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-link text-dark text-decoration-none d-flex align-items-center">
-                                <i class="fa fa-sign-out me-2"></i> Logout
-                            </button>
-                        </form>
+                        <div class="dropdown">
+                            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="avatar-circle me-2">
+                                    {{ strtoupper(substr(Auth::user()->username, 0, 1)) }}
+                                </div>
+                                <span class="text-dark fw-semibold d-none d-sm-inline">{{ Auth::user()->username }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 user-dropdown-menu" aria-labelledby="userDropdown">
+                                <li>
+                                    @php
+                                        $dashboardRoute = 'admin.dashboard';
+                                        if(auth()->user()->role == 'umkm') $dashboardRoute = 'umkm.dashboard';
+                                        elseif(auth()->user()->role == 'user') $dashboardRoute = 'user.profile';
+                                    @endphp
+                                    <a class="dropdown-item user-dropdown-item" href="{{ route($dashboardRoute) }}">
+                                        <i class="fa fa-th-large me-2"></i> Panel Akun
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item user-dropdown-item" href="{{ route('chats.index') }}">
+                                        <i class="fa fa-comments me-2"></i> Pesan
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form action="{{ route('logout') }}" method="POST" class="m-0">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item user-dropdown-item text-danger">
+                                            <i class="fa fa-sign-out me-2"></i> Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
                     @else
-                        <a href="{{ route('loginForm') }}" class="text-dark d-flex align-items-center">
+                        <a href="{{ route('loginForm') }}" class="btn btn-danger btn-sm rounded-pill px-4 fw-semibold shadow-sm">
                             <i class="fa fa-user me-2"></i> Login
                         </a>
                     @endauth

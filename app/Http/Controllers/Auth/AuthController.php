@@ -44,10 +44,17 @@ class AuthController extends Controller
     {
         $user = Auth::user(); // ambil data user yang sedang login
         if (!$user) {
-            return redirect()->route('login'); // jika tidak ada user yang login, arahkan ke halaman login
+            return redirect()->route('login');
         }
-        // Anda bisa mengirimkan data user ke view jika diperlukan
-        return view('auth.profile', compact('user')); // arahkan ke view profile
+        
+        $layout = 'layouts.admin_premium';
+        if ($user->role == 'umkm') {
+            $layout = 'layouts.umkm';
+        } elseif ($user->role == 'user') {
+            $layout = 'layouts.user';
+        }
+
+        return view('auth.profile', compact('user', 'layout'));
     }
 
     public function changePassword()

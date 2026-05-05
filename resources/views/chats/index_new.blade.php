@@ -4,88 +4,119 @@
 
 @section('css')
 <style>
-    body { background-color: #111b21 !important; color: #e9edef !important; }
+    :root {
+        --chat-bg: #f8f9fa;
+        --chat-sidebar-bg: #ffffff;
+        --chat-header-bg: #ffffff;
+        --chat-contact-hover: #f8f9fa;
+        --chat-contact-active: #f0f2f5;
+        --chat-main-bg: #f8f9fa;
+        --chat-text: #1a1a1a;
+        --chat-text-muted: #71717a;
+        --chat-border: #e4e4e7;
+        --chat-header-text: #1a1a1a;
+        --chat-accent: #ef4444;
+    }
+
+    body.dark-mode {
+        --chat-bg: #0f0f0f;
+        --chat-sidebar-bg: #1a1a1a;
+        --chat-header-bg: #1a1a1a;
+        --chat-contact-hover: #242424;
+        --chat-contact-active: #2d2d2d;
+        --chat-main-bg: #121212;
+        --chat-text: #e4e4e7;
+        --chat-text-muted: #a1a1aa;
+        --chat-border: #3f3f46;
+        --chat-header-text: #ffffff;
+        --chat-accent: #f87171;
+    }
+
+    body { background-color: var(--chat-bg) !important; color: var(--chat-text) !important; overflow-x: hidden; }
+    
+    .main-container { margin-top: 15px !important; margin-bottom: 15px !important; min-height: auto !important; }
+
     .chat-container {
         display: flex;
-        background: #111b21;
-        border-radius: 0;
+        background: var(--chat-sidebar-bg);
+        border-radius: 12px;
         overflow: hidden;
-        border: none;
-        height: calc(100vh - 80px);
+        border: 1px solid var(--chat-border);
+        height: calc(100vh - 210px);
         min-height: 500px;
-        margin-top: 0 !important;
-        box-shadow: none;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
     /* Contacts Sidebar */
     .contacts-sidebar {
-        width: 30%;
-        min-width: 300px;
-        border-right: 1px solid #222d34;
+        width: 320px;
+        flex-shrink: 0;
+        border-right: 1px solid var(--chat-border);
         display: flex;
         flex-direction: column;
-        background: #111b21;
+        background: var(--chat-sidebar-bg);
     }
 
     .sidebar-header { 
-        padding: 10px 15px; 
-        background: #202c33; 
+        padding: 15px 20px; 
+        background: var(--chat-header-bg); 
         display: flex; 
-        align-items: center; 
-        height: 60px;
+        flex-direction: column;
+        gap: 12px;
+        border-bottom: 1px solid var(--chat-border);
     }
     
-    .sidebar-header h2 { font-size: 16px; font-weight: 600; margin: 0; color: #e9edef; }
+    .sidebar-header h2 { font-size: 18px; font-weight: 700; margin: 0; color: var(--chat-header-text); }
     
-    .search-box { position: relative; margin: 8px 12px; }
+    .search-box { position: relative; }
     .search-box input { 
-        width: 100%; padding: 7px 15px 7px 40px; 
-        border-radius: 8px; border: none; 
-        background: #202c33; color: #e9edef; 
-        font-size: 14px; outline: none; 
+        width: 100%; padding: 8px 15px 8px 40px; 
+        border-radius: 10px; border: 1px solid var(--chat-border); 
+        background: var(--chat-bg); color: var(--chat-text); 
+        font-size: 13px; outline: none; transition: all 0.2s;
     }
-    .search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #8696a0; font-size: 12px;}
+    .search-box input:focus { border-color: var(--chat-accent); }
+    .search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--chat-text-muted); font-size: 13px;}
 
     .sort-by {
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 13px;
-        color: #8696a0;
-        padding: 0 15px 10px;
-        border-bottom: 1px solid #222d34;
+        font-size: 12px;
+        color: var(--chat-text-muted);
+        margin-top: 5px;
     }
 
     .sort-by span {
-        background: #202c33;
-        padding: 4px 12px;
-        border-radius: 16px;
-        color: #8696a0;
+        background: var(--chat-bg);
+        padding: 3px 12px;
+        border-radius: 15px;
+        color: var(--chat-text-muted);
         cursor: pointer;
+        border: 1px solid var(--chat-border);
     }
 
-    .contact-list { flex: 1; overflow-y: auto; background: #111b21; }
+    .contact-list { flex: 1; overflow-y: auto; background: var(--chat-sidebar-bg); }
     .contact-item { 
-        display: flex; align-items: center; gap: 15px; 
-        padding: 10px 15px; text-decoration: none; color: inherit; 
-        border-bottom: 1px solid #222d34; transition: background 0.2s;
+        display: flex; align-items: center; gap: 12px; 
+        padding: 12px 20px; text-decoration: none; color: inherit; 
+        border-bottom: 1px solid var(--chat-border); transition: all 0.2s;
     }
-    .contact-item:hover { background: #202c33; }
-    .contact-item.active { background: #2a3942; }
+    .contact-item:hover { background: var(--chat-contact-hover); }
+    .contact-item.active { background: var(--chat-contact-active); border-left: 4px solid var(--chat-accent); }
     
     .avatar-wrapper { position: relative; flex-shrink: 0; }
-    .avatar-img { width: 49px; height: 49px; border-radius: 50%; object-fit: cover; }
-    .status-dot { display: none; }
+    .avatar-img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid var(--chat-border); }
     
     .contact-info { flex: 1; min-width: 0; }
-    .contact-name-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
-    .contact-name { font-size: 16px; font-weight: 400; color: #e9edef; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .chat-time { font-size: 12px; color: #8696a0; }
-    .last-msg { font-size: 13px; color: #8696a0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .contact-name-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+    .contact-name { font-size: 14px; font-weight: 600; color: var(--chat-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-time { font-size: 11px; color: var(--chat-text-muted); }
+    .last-msg { font-size: 12px; color: var(--chat-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .typing-status {
-        color: #00a884;
-        font-size: 12px;
+        color: #22c55e;
+        font-size: 11px;
         font-weight: 500;
     }
 
@@ -96,30 +127,45 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        background: #222e35;
-        color: #8696a0;
+        background: var(--chat-main-bg);
+        color: var(--chat-text-muted);
         text-align: center;
         padding: 40px;
-        border-bottom: 6px solid #00a884;
+        position: relative;
+    }
+    .chat-main::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-image: url('https://static.whatsapp.net/rsrc.php/v3/yl/r/rPj_wJ_Q4V0.png');
+        background-repeat: repeat;
+        opacity: 0.03;
+        z-index: 0;
+        pointer-events: none;
     }
 
     .chat-main h3 {
-        color: #e9edef;
-        font-weight: 300;
+        color: var(--chat-text);
+        font-weight: 700;
         margin-bottom: 15px;
+        z-index: 1;
+        font-size: 22px;
     }
+    .chat-main p { z-index: 1; font-size: 14px; }
 
     .empty-chat-icon {
-        font-size: 80px;
-        margin-bottom: 30px;
-        color: #8696a0;
-        opacity: 0.5;
+        font-size: 60px;
+        margin-bottom: 20px;
+        color: var(--chat-text-muted);
+        opacity: 0.2;
+        z-index: 1;
     }
 
     @media (max-width: 768px) {
         .contacts-sidebar { width: 100%; border-right: none; }
         .chat-main { display: none; }
     }
+</style>
 </style>
 @endsection
 
@@ -225,7 +271,7 @@
                 }
                 const timeEl = contactItem.querySelector('.chat-time');
                 if (timeEl) {
-                    timeEl.innerText = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    timeEl.innerText = new Date(msg.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
                 }
             }
         }

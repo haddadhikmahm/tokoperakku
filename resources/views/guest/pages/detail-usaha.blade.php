@@ -88,16 +88,20 @@
                                 <div class="product-item">
                                     <a href="{{ route('guest-singleProduct', $produk->slug) }}">
                                         <div class="thumb">
-                                            <img src="{{ asset('storage/' . optional($produk->fotoProduk->first())->file_foto_produk) }}" 
-                                                 alt="{{ $produk->nama_produk }}"
-                                                 onerror="this.onerror=null;this.src='{{ asset('assets/images/kategori-default.jpg') }}';">
+                                             <img src="{{ asset('storage/' . optional($produk->fotoProduk->first())->file_foto_produk) }}" 
+                                                  alt="{{ $produk->nama_produk }}"
+                                                  onerror="this.onerror=null;this.src='{{ asset('assets/images/produk-default.jpg') }}';">
                                         </div>
                                         <div class="down-content">
                                             <h4>{{ $produk->nama_produk }}</h4>
                                             <span class="product-price">Rp {{ number_format($produk->harga, 0, ',', '.') }}</span>
                                             <ul class="stars">
-                                                @for ($i = 0; $i < 5; $i++)
-                                                    <li><i class="fa fa-star"></i></li>
+                                                @php
+                                                    $avgRating = $produk->reviews->avg('rating') ?: 0;
+                                                    $fullStars = floor($avgRating);
+                                                @endphp
+                                                @for ($i = 1; $i <= 5; $i++)
+                                                    <li><i class="fa fa-star{{ $i <= $fullStars ? '' : '-o' }}"></i></li>
                                                 @endfor
                                             </ul>
                                         </div>

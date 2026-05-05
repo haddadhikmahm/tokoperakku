@@ -12,7 +12,15 @@ class PengerajinController extends Controller
 {
     public function index()
     {
-        $dataPengerajin = Pengerajin::all();
+        $user = auth()->user();
+        if ($user->role === 'admin_wilayah') {
+            $dataPengerajin = Pengerajin::whereHas('usahaPengerajin.usaha', function($query) use ($user) {
+                $query->where('wilayah_id', $user->wilayah_id);
+            })->get();
+        } else {
+            $dataPengerajin = Pengerajin::all();
+        }
+        
         return view('admin.pengerajin.index-pengerajin', [
             'pengerajins' => $dataPengerajin
         ]);
@@ -20,7 +28,13 @@ class PengerajinController extends Controller
 
     public function create()
     {
-        $usahas = Usaha::all();
+        $user = auth()->user();
+        if ($user->role === 'admin_wilayah') {
+            $usahas = Usaha::where('wilayah_id', $user->wilayah_id)->get();
+        } else {
+            $usahas = Usaha::all();
+        }
+
         // Generate automatic code
         $lastPengerajin = Pengerajin::orderBy('id', 'desc')->first();
         $nextId = $lastPengerajin ? $lastPengerajin->id + 1 : 1;
@@ -31,8 +45,15 @@ class PengerajinController extends Controller
 
     public function edit($id)
     {
+        $user = auth()->user();
         $pengerajin = Pengerajin::findOrFail($id);
-        $usahas = Usaha::all();
+        
+        if ($user->role === 'admin_wilayah') {
+            $usahas = Usaha::where('wilayah_id', $user->wilayah_id)->get();
+        } else {
+            $usahas = Usaha::all();
+        }
+
         $selectedUsaha = UsahaPengerajin::where('pengerajin_id', $id)->pluck('usaha_id')->toArray();
         return view('admin.pengerajin.edit-pengerajin', compact('pengerajin', 'usahas', 'selectedUsaha'));
     }

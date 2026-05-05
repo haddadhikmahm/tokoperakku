@@ -70,11 +70,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('admin/change-password', [AuthController::class, 'changePassword'])->name('change-password');
     Route::post('update-password', [AuthController::class, 'updatePassword'])->name('update-password');
     
-    // User Shared Features
-    Route::get('favorit', function() {
-        $layout = auth()->user()->role == 'umkm' ? 'layouts.umkm' : 'layouts.user';
-        return view('user.favorit', compact('layout'));
-    })->name('favorit');
+    // Favorit
+    Route::get('favorit', [\App\Http\Controllers\User\FavoritController::class, 'index'])->name('favorit');
+    Route::post('favorit/toggle/{id}', [\App\Http\Controllers\User\FavoritController::class, 'toggle'])->name('favorit.toggle');
+    Route::delete('favorit/{id}', [\App\Http\Controllers\User\FavoritController::class, 'destroy'])->name('favorit.destroy');
 
     Route::get('pengaturan', function() {
         $layout = auth()->user()->role == 'umkm' ? 'layouts.umkm' : 'layouts.user';
@@ -107,6 +106,10 @@ Route::middleware(['role:admin_utama,admin_wilayah,umkm'])->group(function () {
     Route::get('admin/export-data', [ExportController::class, 'index'])->name('admin.export-data');
     Route::get('admin/export-pengerajin', [ExportController::class, 'exportPengerajin'])->name('admin.export-pengerajin');
 
+    // Dashboard
+    Route::get('admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('umkm/dashboard', [DashboardController::class, 'index'])->name('umkm.dashboard');
+
     // Pelaporan CRUD
     Route::get('admin/pelaporan', [PelaporanController::class, 'index'])->name('admin.pelaporan-index');
     Route::get('admin/pelaporan/create', [PelaporanController::class, 'create'])->name('admin.pelaporan-create');
@@ -119,9 +122,6 @@ Route::middleware(['role:admin_utama,admin_wilayah,umkm'])->group(function () {
 
 // Admin only routes
 Route::middleware(['role:admin_utama,admin_wilayah'])->group(function () {
-    // Dashboard
-    Route::get('admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-
     // Pengerajin
     Route::get('admin/pengerajin', [PengerajinController::class, 'index'])->name('admin.pengerajin-index');
     Route::get('admin/pengerajin/create', [PengerajinController::class, 'create'])->name('admin.pengerajin-create');
