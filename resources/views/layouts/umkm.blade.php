@@ -791,8 +791,9 @@
         window.addEventListener('load', () => {
             if (window.Echo) {
                 // Helper to clear UI badges
-                const clearUnreadBadge = (userId) => {
-                    const contactItem = document.querySelector(`.contact-item[href$="/chats/${userId}"]`);
+                const clearUnreadBadge = (userId, usahaId) => {
+                    const selector = `.contact-item[data-user-id="${userId}"][data-usaha-id="${usahaId || 'null'}"]`;
+                    const contactItem = document.querySelector(selector);
                     if (contactItem) {
                         const badge = contactItem.querySelector('.unread-badge');
                         if (badge) badge.style.display = 'none';
@@ -809,15 +810,15 @@
                         const pathRegex = new RegExp('/chats/' + e.message.sender_id + '$');
                         const isStrictlyInRoom = window.activeChatUserId && 
                                                window.activeChatUserId == e.message.sender_id && 
-                                               pathRegex.test(window.location.pathname) &&
+                                               (window.activeUsahaId == e.message.usaha_id) &&
                                                document.visibilityState === 'visible' &&
                                                document.hasFocus();
 
                         if (isStrictlyInRoom) {
-                            clearUnreadBadge(e.message.sender_id);
-                            axios.post(`{{ url('chats') }}/${e.message.sender_id}/read`);
+                            clearUnreadBadge(e.message.sender_id, e.message.usaha_id);
+                            axios.post(`{{ url('chats') }}/${e.message.sender_id}/read?usaha_id=${e.message.usaha_id || ''}`);
                         } else {
-                            axios.post(`{{ url('chats') }}/${e.message.sender_id}/delivered`);
+                            axios.post(`{{ url('chats') }}/${e.message.sender_id}/delivered?usaha_id=${e.message.usaha_id || ''}`);
                         }
                     });
 

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('usia_pengerajin')->nullable();
             $table->string('telp_pengerajin')->nullable();
             $table->string('email_pengerajin')->nullable();
-            $table->string('alamat_pengerajin')->nullable();
+            $table->text('alamat_pengerajin')->nullable();
             $table->timestamps();
         });
     }

@@ -60,6 +60,20 @@ class UserSeeder extends Seeder
                 'wilayah_id' => 1,
             ]
         );
+        User::updateOrCreate(
+            ['username' => 'umkm_user2'],
+            [
+                'nama' => 'Situmorang Silver2',
+                'email' => 'umkm2@teko.com',
+                'no_hp' => '0813334445552',
+                'gender' => 'Pria',
+                'usia' => 42,
+                'alamat' => 'Purbayan KG III, Kotagede2',
+                'password' => Hash::make('password'),
+                'role' => 'umkm',
+                'wilayah_id' => 1,
+            ]
+        );
 
         // Regular User
         User::updateOrCreate(
@@ -71,6 +85,20 @@ class UserSeeder extends Seeder
                 'gender' => 'Pria',
                 'usia' => 28,
                 'alamat' => 'Jl. Gedongkuning No. 45, Yogyakarta',
+                'password' => Hash::make('password'),
+                'role' => 'user',
+                'wilayah_id' => 2,
+            ]
+        );
+        User::updateOrCreate(
+            ['username' => 'regular_user2'],
+            [
+                'nama' => 'Andi Pembeli2',
+                'email' => 'user2@teko.com',
+                'no_hp' => '085666777882',
+                'gender' => 'Pria',
+                'usia' => 28,
+                'alamat' => 'Jl. Gedongkuning No. 45, Yogyakarta2',
                 'password' => Hash::make('password'),
                 'role' => 'user',
                 'wilayah_id' => 2,

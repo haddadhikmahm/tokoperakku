@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('nama_usaha')->nullable();
             $table->string('telp_usaha')->nullable();
             $table->string('email_usaha')->nullable();
-            $table->string('deskripsi_usaha')->nullable();
+            $table->text('deskripsi_usaha')->nullable();
             $table->string('foto_usaha')->nullable();
             $table->string('link_gmap_usaha')->nullable();
             $table->enum('status_usaha', ['aktif', 'nonaktif', 'tutup', 'pending', 'dibekukan'])->default('aktif');

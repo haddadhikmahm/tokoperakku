@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class KategoriProduk extends Model
 {
+    use HasFactory;
+
     protected $table = 'kategori_produk';
     protected $fillable = [
         'kode_kategori_produk',

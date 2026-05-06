@@ -28,5 +28,8 @@ class UsahaSeeder extends Seeder
                 'wilayah_id' => $umkmUser->wilayah_id,
             ]);
         }
+
+        // Bulk UMKM (Usaha)
+        \App\Models\Usaha::factory()->count(30)->create();
     }
 }

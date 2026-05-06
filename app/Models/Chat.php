@@ -12,6 +12,7 @@ class Chat extends Model
     protected $fillable = [
         'sender_id', 
         'receiver_id', 
+        'usaha_id',
         'message', 
         'type', 
         'attachment', 
@@ -31,6 +32,11 @@ class Chat extends Model
     public function receiver()
     {
         return $this->belongsTo(User::class, 'receiver_id');
+    }
+
+    public function usaha()
+    {
+        return $this->belongsTo(Usaha::class, 'usaha_id');
     }
 
     public function replyTo()

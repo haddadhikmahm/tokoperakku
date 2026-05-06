@@ -369,7 +369,11 @@
 
         <div class="contact-list">
             @foreach($chatUsers as $chatUser)
-            <a href="{{ route('chats.show', $chatUser->id) }}" class="contact-item {{ $user->id == $chatUser->id ? 'active' : '' }}" data-name="{{ strtolower($chatUser->display_name) }}">
+            <a href="{{ route('chats.show', ['user' => $chatUser->id, 'usaha_id' => $chatUser->active_usaha_id]) }}" 
+               class="contact-item {{ ($user->id == $chatUser->id && $usahaId == $chatUser->active_usaha_id) ? 'active' : '' }}" 
+               data-name="{{ strtolower($chatUser->display_name) }}"
+               data-user-id="{{ $chatUser->id }}"
+               data-usaha-id="{{ $chatUser->active_usaha_id ?? 'null' }}">
                 <div class="avatar-wrapper">
                     @if($chatUser->usaha && $chatUser->usaha->foto_usaha)
                         <img src="{{ asset('storage/' . $chatUser->usaha->foto_usaha) }}" class="avatar-img" alt="">
@@ -556,6 +560,7 @@
         <form id="chat-form" class="input-bar" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="receiver_id" value="{{ $user->id }}">
+            <input type="hidden" name="usaha_id" value="{{ $usahaId }}">
             <input type="hidden" name="reply_to_id" id="reply-id-input">
             <input type="hidden" id="edit-id-input">
             <input type="file" id="attachment-input" name="attachment" style="display: none;">
@@ -573,6 +578,7 @@
     <script>
         // Global identifier for this specific chat room
         window.activeChatUserId = {{ $user->id }};
+        window.activeUsahaId = {{ $usahaId ?? 'null' }};
     </script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 @vite(['resources/js/app.js'])
@@ -672,8 +678,8 @@
                 const chatChannel = window.Echo.private('chat.{{ Auth::id() }}');
                 
                 chatChannel.listen('.message.sent', (e) => {
-                        // Double check if we are truly in the right room
-                        if (e.message.sender_id == window.activeChatUserId) {
+                        // Double check if we are truly in the right room (same user AND same shop)
+                        if (e.message.sender_id == window.activeChatUserId && e.message.usaha_id == window.activeUsahaId) {
                             appendMessage(e.message, false);
                         }
                         updateSidebar(e.message);
@@ -701,9 +707,7 @@
                             }
 
                             // Remove unread badge from sidebar for this contact
-                            // e.chat.sender_id is the person who sent the message (ME in this listener)
-                            // e.chat.receiver_id is the person who READ the message
-                            const contactItem = document.querySelector(`.contact-item[href$="/chats/${e.chat.receiver_id}"]`);
+                            const contactItem = document.querySelector(`.contact-item[data-user-id="${e.chat.receiver_id}"][data-usaha-id="${e.chat.usaha_id || 'null'}"]`);
                             if (contactItem) {
                                 const badge = contactItem.querySelector('.unread-badge');
                                 if (badge) badge.style.display = 'none';
@@ -783,7 +787,8 @@
         }
 
         function updateSidebar(msg) {
-            const contactItem = document.querySelector(`.contact-item[href$="/chats/${msg.sender_id}"]`);
+            const partnerId = msg.sender_id == {{ Auth::id() }} ? msg.receiver_id : msg.sender_id;
+            const contactItem = document.querySelector(`.contact-item[data-user-id="${partnerId}"][data-usaha-id="${msg.usaha_id || 'null'}"]`);
             if (contactItem) {
                 const sidebar = document.querySelector('.contact-list');
                 sidebar.prepend(contactItem);
