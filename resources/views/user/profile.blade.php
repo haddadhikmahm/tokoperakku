@@ -128,28 +128,33 @@
 
 <div class="info-grid">
     <div class="form-group">
-        <label>Nama Depan</label>
-        <input type="text" class="form-control" value="{{ explode(' ', Auth::user()->nama ?? '')[0] }}" readonly>
+        <label>Nama Lengkap</label>
+        <input type="text" class="form-control" value="{{ Auth::user()->nama ?? '-' }}" readonly>
     </div>
     <div class="form-group">
         <label>Email</label>
         <input type="text" class="form-control" value="{{ Auth::user()->email }}" readonly>
     </div>
     <div class="form-group">
-        <label>Nama Belakang</label>
-        <input type="text" class="form-control" value="{{ count(explode(' ', Auth::user()->nama ?? '')) > 1 ? implode(' ', array_slice(explode(' ', Auth::user()->nama ?? ''), 1)) : '-' }}" readonly>
+        <label>Nomor HP</label>
+        <input type="text" class="form-control" value="{{ Auth::user()->no_hp ?? '-' }}" readonly>
     </div>
     <div class="form-group">
-        <label>Nomor</label>
-        <input type="text" class="form-control" value="{{ Auth::user()->no_hp ?? '-' }}" readonly>
+        <label>Jenis Kelamin</label>
+        <input type="text" class="form-control" value="{{ Auth::user()->gender ?? '-' }}" readonly>
+    </div>
+    <div class="form-group">
+        <label>Usia</label>
+        <input type="text" class="form-control" value="{{ Auth::user()->usia ? Auth::user()->usia . ' Tahun' : '-' }}" readonly>
     </div>
     <div class="form-group">
         <label>Username</label>
         <input type="text" class="form-control" value="{{ Auth::user()->username }}" readonly>
     </div>
-    <div class="form-group">
-        <label>Password</label>
-        <input type="password" class="form-control" value="************" readonly>
-    </div>
+</div>
+
+<div class="form-group mt-4">
+    <label>Alamat</label>
+    <textarea class="form-control" rows="3" readonly style="resize: none;">{{ Auth::user()->alamat ?? '-' }}</textarea>
 </div>
 @endsection

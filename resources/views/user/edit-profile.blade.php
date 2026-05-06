@@ -124,20 +124,37 @@
         <div class="form-grid">
             <div class="form-group">
                 <label>Nama Lengkap</label>
-                <input type="text" name="nama" class="form-control" value="{{ Auth::user()->nama }}">
+                <input type="text" name="nama" class="form-control" value="{{ Auth::user()->nama }}" placeholder="Masukkan nama lengkap">
             </div>
             <div class="form-group">
                 <label>Email</label>
-                <input type="email" name="email" class="form-control" value="{{ Auth::user()->email }}">
+                <input type="email" name="email" class="form-control" value="{{ Auth::user()->email }}" placeholder="nama@email.com">
             </div>
             <div class="form-group">
                 <label>Nomor HP</label>
-                <input type="text" name="no_hp" class="form-control" value="{{ Auth::user()->no_hp }}">
+                <input type="text" name="no_hp" class="form-control" value="{{ Auth::user()->no_hp }}" placeholder="0812xxxx">
+            </div>
+            <div class="form-group">
+                <label>Jenis Kelamin</label>
+                <select name="gender" class="form-control">
+                    <option value="" disabled {{ !Auth::user()->gender ? 'selected' : '' }}>Pilih Jenis Kelamin</option>
+                    <option value="Pria" {{ Auth::user()->gender == 'Pria' ? 'selected' : '' }}>Pria</option>
+                    <option value="Wanita" {{ Auth::user()->gender == 'Wanita' ? 'selected' : '' }}>Wanita</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Usia</label>
+                <input type="number" name="usia" class="form-control" value="{{ Auth::user()->usia }}" placeholder="Contoh: 25">
             </div>
             <div class="form-group">
                 <label>Username</label>
                 <input type="text" class="form-control" value="{{ Auth::user()->username }}" readonly style="background: #fafafa; color: #a1a1aa;">
             </div>
+        </div>
+
+        <div class="form-group mt-4">
+            <label>Alamat</label>
+            <textarea name="alamat" class="form-control" rows="3" placeholder="Masukkan alamat lengkap">{{ Auth::user()->alamat }}</textarea>
         </div>
 
         <div class="actions">

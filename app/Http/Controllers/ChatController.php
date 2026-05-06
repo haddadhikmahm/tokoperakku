@@ -68,6 +68,8 @@ class ChatController extends Controller
 
     private function getChatUsers($user, $activeChatUserId = null)
     {
+        $specificUsahaId = request('usaha_id');
+
         // Fetch users who:
         // 1. Have already chatted with the current user OR
         // 2. Is the user we are currently chatting with (to allow starting new chats)
@@ -89,13 +91,22 @@ class ChatController extends Controller
                 $q->where('sender_id', $user->id)->latest();
             }])
             ->get()
-            ->map(function($u) use ($user) {
+            ->map(function($u) use ($user, $activeChatUserId, $specificUsahaId) {
                 $lastSent = $u->chatsSent->first();
                 $lastReceived = $u->chatsReceived->first();
                 
                 $lastChat = collect([$lastSent, $lastReceived])->filter()->sortByDesc('created_at')->first();
                 
-                $u->display_name = $u->usaha->nama_usaha ?? ($u->nama ?? $u->username);
+                // Logic untuk display name yang konsisten
+                $displayName = null;
+                if ($u->id == $activeChatUserId && $specificUsahaId) {
+                    $specificUsaha = \App\Models\Usaha::find($specificUsahaId);
+                    if ($specificUsaha && $specificUsaha->user_id == $u->id) {
+                        $displayName = $specificUsaha->nama_usaha;
+                    }
+                }
+
+                $u->display_name = $displayName ?? ($u->usaha->nama_usaha ?? ($u->nama ?? $u->username));
                 $u->last_message = $lastChat ? $lastChat->message : '';
                 $u->last_message_sender_id = $lastChat ? $lastChat->sender_id : null;
                 $u->last_message_is_read = $lastChat ? $lastChat->is_read : false;

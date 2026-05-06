@@ -66,7 +66,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('umkm/profile/update', [ProfileController::class, 'update'])->name('umkm.profile.update');
     Route::put('user/profile/update', [ProfileController::class, 'update'])->name('user.profile.update');
 
-    Route::post('profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('admin/change-password', [AuthController::class, 'changePassword'])->name('change-password');
     Route::post('update-password', [AuthController::class, 'updatePassword'])->name('update-password');
     

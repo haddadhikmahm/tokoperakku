@@ -33,7 +33,12 @@ class UserSeeder extends Seeder
         User::updateOrCreate(
             ['username' => 'admin_wilayah'],
             [
+                'nama' => 'Budi Wilayah',
                 'email' => 'admin_perak@teko.com',
+                'no_hp' => '081222333444',
+                'gender' => 'Pria',
+                'usia' => 35,
+                'alamat' => 'Jl. Mondorakan No. 12, Kotagede',
                 'password' => Hash::make('password'),
                 'role' => 'admin_wilayah',
                 'wilayah_id' => 1,
@@ -44,7 +49,12 @@ class UserSeeder extends Seeder
         User::updateOrCreate(
             ['username' => 'umkm_user'],
             [
+                'nama' => 'Situmorang Silver',
                 'email' => 'umkm@teko.com',
+                'no_hp' => '081333444555',
+                'gender' => 'Pria',
+                'usia' => 42,
+                'alamat' => 'Purbayan KG III, Kotagede',
                 'password' => Hash::make('password'),
                 'role' => 'umkm',
                 'wilayah_id' => 1,
@@ -55,7 +65,12 @@ class UserSeeder extends Seeder
         User::updateOrCreate(
             ['username' => 'regular_user'],
             [
+                'nama' => 'Andi Pembeli',
                 'email' => 'user@teko.com',
+                'no_hp' => '085666777888',
+                'gender' => 'Pria',
+                'usia' => 28,
+                'alamat' => 'Jl. Gedongkuning No. 45, Yogyakarta',
                 'password' => Hash::make('password'),
                 'role' => 'user',
                 'wilayah_id' => 2,

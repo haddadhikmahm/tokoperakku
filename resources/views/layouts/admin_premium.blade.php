@@ -466,9 +466,9 @@
             <header class="header">
                 <div class="user-nav">
                     <div class="user-avatar">
-                        <img src="{{ Auth::user()->foto ? asset('storage/'.Auth::user()->foto) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->username).'&background=e4e4e7&color=71717a' }}" alt="User">
+                        <img src="{{ Auth::user()->foto ? asset('storage/'.Auth::user()->foto) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->nama ?? Auth::user()->username).'&background=e4e4e7&color=71717a' }}" alt="User">
                     </div>
-                    <span class="user-name">{{ Auth::user()->username }} <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 5px; color: #888;"></i></span>
+                    <span class="user-name">{{ Auth::user()->nama ?? Auth::user()->username }} <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 5px; color: #888;"></i></span>
                 </div>
             </header>
 

@@ -633,9 +633,9 @@
                 
                 <div class="user-profile-trigger" id="profileTrigger">
                     <div class="avatar-circle">
-                        <img src="{{ Auth::user()->foto ? asset('storage/'.Auth::user()->foto) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->username).'&background=e4e4e7&color=71717a' }}" alt="">
+                        <img src="{{ Auth::user()->foto ? asset('storage/'.Auth::user()->foto) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->nama ?? Auth::user()->username).'&background=e4e4e7&color=71717a' }}" alt="">
                     </div>
-                    <span class="user-name">{{ Auth::user()->username }}</span>
+                    <span class="user-name">{{ Auth::user()->nama ?? Auth::user()->username }}</span>
                     <i class="fas fa-chevron-down" style="font-size: 10px; color: #a1a1aa;"></i>
 
                     <div class="profile-dropdown" id="profileDropdown">
