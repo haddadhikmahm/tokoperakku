@@ -9,7 +9,19 @@ class Chat extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['sender_id', 'receiver_id', 'message', 'type', 'attachment', 'is_read', 'is_delivered'];
+    protected $fillable = [
+        'sender_id', 
+        'receiver_id', 
+        'message', 
+        'type', 
+        'attachment', 
+        'is_read', 
+        'is_delivered', 
+        'reply_to_id',
+        'deleted_by_sender',
+        'deleted_by_receiver',
+        'is_edited'
+    ];
 
     public function sender()
     {
@@ -19,5 +31,10 @@ class Chat extends Model
     public function receiver()
     {
         return $this->belongsTo(User::class, 'receiver_id');
+    }
+
+    public function replyTo()
+    {
+        return $this->belongsTo(Chat::class, 'reply_to_id');
     }
 }

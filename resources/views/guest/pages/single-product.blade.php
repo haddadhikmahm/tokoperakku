@@ -47,7 +47,7 @@
         }
         .rating-avg-box {
             text-align: center;
-            flex: 1;
+            flex: 0.7;
         }
         .rating-avg-value {
             font-size: 48px;
@@ -66,8 +66,8 @@
         }
 
         .rating-bars-box {
-            flex: 1.5;
-            padding: 0 40px;
+            flex: 2.5;
+            padding: 0 60px;
             border-right: 1px solid #ddd;
         }
         .rating-bar-item {
@@ -97,7 +97,7 @@
         }
 
         .write-review-box {
-            flex: 1;
+            flex: 0.8;
             display: flex;
             justify-content: center;
         }
@@ -229,6 +229,24 @@
 @endpush
 
 @section('content')
+    @php
+        // Mengambil data review secara langsung dari database untuk memastikan sinkronisasi data
+        $actualReviews = \App\Models\Review::where('produk_id', $produk->id)->get();
+        $actualReviewsCount = $actualReviews->count();
+        $actualAverageRating = $actualReviewsCount > 0 ? $actualReviews->avg('rating') : 0;
+        
+        $actualRatingStats = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
+        foreach($actualReviews as $r) {
+            if(isset($actualRatingStats[$r->rating])) {
+                $actualRatingStats[$r->rating]++;
+            }
+        }
+
+        $hasReviewed = false;
+        if(Auth::check() && Auth::user()->role === 'user') {
+            $hasReviewed = $actualReviews->where('user_id', Auth::id())->count() > 0;
+        }
+    @endphp
     {{-- Breadcrumb Navigation --}}
     <div class="container">
         <div class="row">
@@ -312,8 +330,11 @@
                         <div class="rating-stock-wrapper">
                             <div class="rating-wrapper">
                                 <div class="stars-custom">
-                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <i class="fa fa-star{{ $i <= floor($actualAverageRating) ? '' : ($i - $actualAverageRating < 1 && $i - $actualAverageRating > 0 ? '-half-o' : '-o') }}"></i>
+                                    @endfor
                                 </div>
+                                <span class="ms-2 text-muted" style="font-size: 13px;">({{ $actualReviewsCount }} Ulasan)</span>
                             </div>
                             <span class="stock-status">IN STOCK</span>
                         </div>
@@ -334,7 +355,7 @@
                                 <div class="social-links mt-2">
                                     @auth
                                         @if(Auth::id() !== $usaha->user_id)
-                                            <a href="{{ route('chats.show', $usaha->user_id) }}" class="btn btn-sm btn-primary mb-2 shadow-sm">
+                                            <a href="{{ route('chats.show', ['user' => $usaha->user_id, 'usaha_id' => $usaha->id]) }}" class="btn btn-sm btn-primary mb-2 shadow-sm">
                                                 <i class="fa fa-comments"></i> Chat Penjual
                                             </a>
                                         @endif
@@ -374,28 +395,34 @@
         </div>
         <div class="container">
             <div class="row">
-                @foreach ($randomProduks as $produk)
+                @foreach ($randomProduks as $relatedProduct)
                     <div class="col-lg-3 col-md-6 mb-4">
                         <div class="product-item">
-                            <a href="{{ route('guest-singleProduct', $produk->slug) }}">
+                            <a href="{{ route('guest-singleProduct', $relatedProduct->slug) }}">
                                 <div class="thumb">
-                                    <img src="{{ asset('storage/' . optional($produk->fotoProduk->first())->file_foto_produk) }}"
-                                        alt="{{ $produk->nama_produk }}"
+                                    <img src="{{ asset('storage/' . optional($relatedProduct->fotoProduk->first())->file_foto_produk) }}"
+                                        alt="{{ $relatedProduct->nama_produk }}"
                                         onerror="this.onerror=null;this.src='{{ asset('images/produk-default.jpg') }}';">
                                 </div>
                                 <div class="down-content">
-                                    <h4>{{ $produk->nama_produk }}</h4>
-                                    <span class="product-price">Rp {{ number_format($produk->harga, 0, ',', '.') }}</span>
+                                    <h4>{{ $relatedProduct->nama_produk }}</h4>
+                                    <span class="product-price">Rp {{ number_format($relatedProduct->harga, 0, ',', '.') }}</span>
                                     <ul class="stars">
                                         @php
-                                            $avgRating = $produk->reviews->avg('rating') ?: 0;
-                                            $fullStars = floor($avgRating);
+                                            $avg = $relatedProduct->reviews->avg('rating') ?: 0;
+                                            $full = floor($avg);
                                         @endphp
-                                        @for ($i = 1; $i <= 5; $i++)
-                                            <li><i class="fa fa-star{{ $i <= $fullStars ? '' : '-o' }}"></i></li>
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <li><i class="fa fa-star{{ $i <= $full ? '' : ($i - $avg < 1 && $i - $avg > 0 ? '-half-o' : '-o') }}"></i></li>
                                         @endfor
                                     </ul>
-                                    <p class="product-reviews">{{ $produk->reviews->count() }} Reviews</p>
+                                    <p class="product-reviews">
+                                        @if($relatedProduct->reviews->count() > 0)
+                                            {{ $relatedProduct->reviews->count() }} Reviews
+                                        @else
+                                            Belum ada review
+                                        @endif
+                                    </p>
                                 </div>
                             </a>
                         </div>
@@ -423,20 +450,21 @@
                     {{-- Summary Card --}}
                     <div class="review-summary-card">
                         <div class="rating-avg-box">
-                            <div class="rating-avg-value">{{ number_format($averageRating, 1) }}</div>
+                            <div class="rating-avg-value">{{ number_format($actualAverageRating, 1) }}</div>
                             <div class="rating-avg-stars">
                                 @for($i = 1; $i <= 5; $i++)
-                                    <i class="fa fa-star{{ $i <= round($averageRating) ? '' : '-o' }}"></i>
+                                    <i class="fa fa-star{{ $i <= floor($actualAverageRating) ? '' : ($i - $actualAverageRating < 1 && $i - $actualAverageRating > 0 ? '-half-o' : '-o') }}"></i>
                                 @endfor
                             </div>
-                            <div class="rating-avg-count">dari {{ $reviewsCount }} Review</div>
+                            <div class="rating-avg-count">{{ number_format($actualAverageRating, 1) }} dari 5 Bintang</div>
+                            <div class="text-muted" style="font-size: 12px; margin-top: 4px;">({{ $actualReviewsCount }} Ulasan)</div>
                         </div>
 
-                        <div class="rating-bars-box">
+                        <div class="rating-bars-box" style="{{ $hasReviewed ? 'border-right: none;' : '' }}">
                             @foreach([5, 4, 3, 2, 1] as $star)
                                 @php 
-                                    $count = $ratingStats[$star];
-                                    $percent = $reviewsCount > 0 ? ($count / $reviewsCount) * 100 : 0;
+                                    $sCount = $actualRatingStats[$star];
+                                    $percent = $actualReviewsCount > 0 ? ($sCount / $actualReviewsCount) * 100 : 0;
                                 @endphp
                                 <div class="rating-bar-item">
                                     <div class="rating-bar-label">{{ $star }} <i class="fa fa-star"></i></div>
@@ -447,20 +475,11 @@
                             @endforeach
                         </div>
 
+                        @if(!$hasReviewed)
                         <div class="write-review-box">
                             @auth
                                 @if(Auth::user()->role === 'user')
-                                    @php
-                                        $hasReviewed = $produk->reviews->where('user_id', Auth::id())->count() > 0;
-                                    @endphp
-                                    
-                                    @if($hasReviewed)
-                                        <div id="alreadyReviewedBadge">
-                                            <span class="badge bg-success py-2 px-3"><i class="fa fa-check-circle"></i> Ulasan Sudah Terkirim</span>
-                                        </div>
-                                    @else
-                                        <button class="btn btn-write-review" id="btnShowReviewForm" onclick="toggleReviewForm()">Tulis Ulasan Anda</button>
-                                    @endif
+                                    <button class="btn btn-write-review" id="btnShowReviewForm" onclick="toggleReviewForm()">Tulis Ulasan Anda</button>
                                 @else
                                     <span class="text-muted text-center">Hanya Pembeli yang dapat mengulas</span>
                                 @endif
@@ -468,6 +487,7 @@
                                 <a href="{{ route('login') }}" class="btn btn-write-review">Tulis Ulasan Anda</a>
                             @endauth
                         </div>
+                        @endif
                     </div>
 
                     {{-- Write Review Form (Hidden by Default) --}}
@@ -498,14 +518,14 @@
                     </div>
 
                     {{-- Review Filter --}}
-                    @if($reviewsCount > 0)
+                    @if($actualReviewsCount > 0)
                     <div class="review-filter-box">
                         <div class="d-flex align-items-center gap-2">
                             <span class="text-muted fw-bold">Urut Berdasarkan:</span>
-                            <select class="review-filter-select">
-                                <option>Produk Terbaru</option>
-                                <option>Rating Tertinggi</option>
-                                <option>Rating Terendah</option>
+                            <select class="review-filter-select" id="reviewSortSelect" onchange="sortReviews()">
+                                <option value="newest">Produk Terbaru</option>
+                                <option value="highest">Rating Tertinggi</option>
+                                <option value="lowest">Rating Terendah</option>
                             </select>
                         </div>
                     </div>
@@ -513,8 +533,10 @@
 
                     {{-- Review List --}}
                     <div class="reviews-list" id="reviewsListContainer">
-                        @forelse($produk->reviews->sortByDesc('created_at') as $review)
-                            <div class="review-list-item">
+                        @forelse($actualReviews->sortByDesc('created_at') as $review)
+                            <div class="review-list-item {{ $loop->iteration > 3 ? 'd-none hidden-review' : '' }}" 
+                                 data-rating="{{ $review->rating }}" 
+                                 data-date="{{ $review->created_at->timestamp }}">
                                 <div class="review-user-avatar">
                                     {{ strtoupper(substr($review->user->username, 0, 2)) }}
                                 </div>
@@ -543,11 +565,12 @@
                         @endforelse
                     </div>
 
-                    @if($reviewsCount > 5)
-                    <div class="load-more-container">
-                        <button class="btn btn-load-more">Load more reviews</button>
-                    </div>
+                    @if($actualReviewsCount > 3)
+                        <div class="text-center mt-5" id="loadMoreContainer">
+                            <button class="btn btn-outline-dark px-5 py-2" style="border-radius: 25px; font-weight: 600;" onclick="loadMoreReviews()">Tampilkan Ulasan Lainnya</button>
+                        </div>
                     @endif
+
                 </div>
             </div>
         </div>
@@ -688,9 +711,9 @@
                         // Sembunyikan form
                         toggleReviewForm();
                         
-                        // Sembunyikan tombol "Tulis Ulasan" dan ganti dengan badge
+                        // Sembunyikan tombol "Tulis Ulasan" dan kotaknya
                         const writeReviewBox = document.querySelector('.write-review-box');
-                        writeReviewBox.innerHTML = '<div id="alreadyReviewedBadge"><span class="badge bg-success py-2 px-3"><i class="fa fa-check-circle"></i> Ulasan Sudah Terkirim</span></div>';
+                        if (writeReviewBox) writeReviewBox.remove();
 
                         // Buat elemen ulasan baru
                         const review = response.data.review;
@@ -721,10 +744,17 @@
                         const emptyState = container.querySelector('.text-center.py-5');
                         if (emptyState) emptyState.remove();
                         
-                        container.insertAdjacentHTML('afterbegin', reviewHtml);
+                        // Buat HTML dengan atribut data untuk sorting
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = reviewHtml;
+                        const newReviewElement = tempDiv.firstElementChild;
+                        newReviewElement.setAttribute('data-rating', review.rating);
+                        newReviewElement.setAttribute('data-date', Math.floor(Date.now() / 1000));
+                        
+                        container.insertAdjacentElement('afterbegin', newReviewElement);
                         
                         // Scroll ke ulasan baru
-                        container.firstElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        newReviewElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 })
                 .catch(error => {
@@ -742,6 +772,47 @@
             stars += `<i class="fa fa-star${i <= rating ? '' : '-o'}"></i> `;
         }
         return stars;
+    }
+
+    function loadMoreReviews() {
+        const hiddenReviews = document.querySelectorAll('.hidden-review');
+        hiddenReviews.forEach(r => r.classList.remove('d-none', 'hidden-review'));
+        
+        const container = document.getElementById('loadMoreContainer');
+        if (container) container.remove();
+    }
+
+    function sortReviews() {
+        const select = document.getElementById('reviewSortSelect');
+        const criteria = select.value;
+        const container = document.getElementById('reviewsListContainer');
+        const items = Array.from(container.querySelectorAll('.review-list-item'));
+        
+        items.sort((a, b) => {
+            if (criteria === 'newest') {
+                return b.dataset.date - a.dataset.date;
+            } else if (criteria === 'highest') {
+                return b.dataset.rating - a.dataset.rating;
+            } else if (criteria === 'lowest') {
+                return a.dataset.rating - b.dataset.rating;
+            }
+            return 0;
+        });
+        
+        // Re-append items in new order
+        items.forEach(item => container.appendChild(item));
+        
+        // Tetap terapkan logic "Load More" jika tombolnya masih ada
+        const loadMoreBtn = document.getElementById('loadMoreContainer');
+        if (loadMoreBtn) {
+            items.forEach((item, index) => {
+                if (index >= 3) {
+                    item.classList.add('d-none', 'hidden-review');
+                } else {
+                    item.classList.remove('d-none', 'hidden-review');
+                }
+            });
+        }
     }
 </script>
 @endpush

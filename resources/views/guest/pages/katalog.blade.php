@@ -169,14 +169,20 @@
                             <span class="product-price">Rp {{ number_format($produk->harga, 0, ',', '.') }}</span>
                             <ul class="stars">
                                 @php
-                                    $avgRating = $produk->reviews->avg('rating') ?: 0;
-                                    $fullStars = floor($avgRating);
+                                    $avg = $produk->reviews->avg('rating') ?: 0;
+                                    $full = floor($avg);
                                 @endphp
-                                @for ($i = 1; $i <= 5; $i++)
-                                    <li><i class="fa fa-star{{ $i <= $fullStars ? '' : '-o' }}"></i></li>
+                                @for($i = 1; $i <= 5; $i++)
+                                    <li><i class="fa fa-star{{ $i <= $full ? '' : ($i - $avg < 1 && $i - $avg > 0 ? '-half-o' : '-o') }}"></i></li>
                                 @endfor
                             </ul>
-                            <p class="product-reviews">20 Reviews</p>
+                            <p class="product-reviews">
+                                @if($produk->reviews->count() > 0)
+                                    {{ $produk->reviews->count() }} Reviews
+                                @else
+                                    Belum ada review
+                                @endif
+                            </p>
                         </div>
                     </a>
                 </div>

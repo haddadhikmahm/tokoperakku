@@ -78,6 +78,10 @@ class PageController extends Controller
             case 'harga-tinggi':
                 $query->orderBy('harga', 'desc');
                 break;
+            case 'populer':
+                // Mengurutkan berdasarkan rata-rata rating ulasan
+                $query->withAvg('reviews', 'rating')->orderBy('reviews_avg_rating', 'desc');
+                break;
             default:
                 $query->latest();
                 break;

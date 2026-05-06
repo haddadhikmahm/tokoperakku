@@ -10,6 +10,13 @@ Broadcast::channel('chat.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
+Broadcast::channel('chat-module', function ($user) {
+    return [
+        'id' => $user->id,
+        'username' => $user->username,
+    ];
+});
+
 Broadcast::channel('online', function ($user) {
     return [
         'id' => $user->id,

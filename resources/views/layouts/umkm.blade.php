@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title') - TekoPerakku</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
@@ -139,6 +140,52 @@
         .nav-link i {
             margin-left: 5px;
             font-size: 10px;
+        }
+
+        /* Category Dropdown */
+        .category-dropdown-wrapper {
+            position: relative;
+        }
+        .category-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            width: 220px;
+            display: none;
+            z-index: 1000;
+            margin-top: 15px;
+            padding: 8px;
+            animation: slideDown 0.2s ease-out;
+        }
+        .category-dropdown-wrapper:hover .category-dropdown {
+            display: block;
+        }
+        .category-dropdown::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            right: 0;
+            height: 20px;
+        }
+        .category-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            text-decoration: none;
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .category-item:hover {
+            background: #f4f4f5;
         }
 
         /* Main Content Layout */
@@ -582,7 +629,6 @@
             </div>
 
             <div class="header-actions">
-                <a href="#" class="action-link"><i class="far fa-heart"></i></a>
                 <a href="{{ route('chats.index') }}" class="action-link"><i class="far fa-comment-dots"></i></a>
                 
                 <div class="user-profile-trigger" id="profileTrigger">
@@ -613,10 +659,19 @@
 
         <nav class="nav-menu">
             <a href="{{ route('guest-index') }}" class="nav-link">Beranda</a>
-            <a href="{{ route('guest-products') }}" class="nav-link">Katalog</a>
-            <a href="#" class="nav-link">Kategori <i class="fas fa-chevron-down"></i></a>
-            <a href="#" class="nav-link">Tentang Kami</a>
-            <a href="#" class="nav-link">Kontak</a>
+            <a href="{{ route('guest-katalog') }}" class="nav-link">Katalog</a>
+            <div class="category-dropdown-wrapper">
+                <a href="#" class="nav-link">Kategori <i class="fas fa-chevron-down"></i></a>
+                <div class="category-dropdown">
+                    @foreach($kategoris as $kategori)
+                        <a href="{{ route('guest-katalog', ['kategori' => $kategori->slug]) }}" class="category-item">
+                            {{ $kategori->nama_kategori_produk }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+            <a href="{{ route('guest-about') }}" class="nav-link">Tentang Kami</a>
+            <a href="{{ route('guest-contact') }}" class="nav-link">Kontak</a>
         </nav>
     </header>
 
@@ -735,16 +790,58 @@
         @if(Auth::check())
         window.addEventListener('load', () => {
             if (window.Echo) {
-                // Mark all received messages as delivered when connecting
-                axios.post('{{ route("chats.delivered.all") }}');
+                // Helper to clear UI badges
+                const clearUnreadBadge = (userId) => {
+                    const contactItem = document.querySelector(`.contact-item[href$="/chats/${userId}"]`);
+                    if (contactItem) {
+                        const badge = contactItem.querySelector('.unread-badge');
+                        if (badge) badge.style.display = 'none';
+                        const lastMsgTextStrong = contactItem.querySelector('.last-msg-text strong');
+                        if (lastMsgTextStrong) {
+                            const span = lastMsgTextStrong.parentElement;
+                            span.innerText = lastMsgTextStrong.innerText;
+                        }
+                    }
+                };
 
                 window.Echo.private('chat.{{ Auth::id() }}')
                     .listen('.message.sent', (e) => {
-                        // If we are not actively reading this chat window
-                        if (!window.location.pathname.includes('/chats/' + e.message.sender_id)) {
-                            axios.post(`/chats/${e.message.sender_id}/delivered`);
+                        const pathRegex = new RegExp('/chats/' + e.message.sender_id + '$');
+                        const isStrictlyInRoom = window.activeChatUserId && 
+                                               window.activeChatUserId == e.message.sender_id && 
+                                               pathRegex.test(window.location.pathname) &&
+                                               document.visibilityState === 'visible' &&
+                                               document.hasFocus();
+
+                        if (isStrictlyInRoom) {
+                            clearUnreadBadge(e.message.sender_id);
+                            axios.post(`{{ url('chats') }}/${e.message.sender_id}/read`);
+                        } else {
+                            axios.post(`{{ url('chats') }}/${e.message.sender_id}/delivered`);
                         }
                     });
+
+                // Auto-mark as read when switching back to the tab
+                const markCurrentAsRead = () => {
+                    const pathRegex = new RegExp('/chats/' + window.activeChatUserId + '$');
+                    if (window.activeChatUserId && document.visibilityState === 'visible' && document.hasFocus() && pathRegex.test(window.location.pathname)) {
+                        clearUnreadBadge(window.activeChatUserId);
+                        axios.post(`{{ url('chats') }}/${window.activeChatUserId}/read`);
+                    }
+                };
+
+                // Clear badge on initial page load if we are already in a chat room
+                if (window.activeChatUserId) {
+                    clearUnreadBadge(window.activeChatUserId);
+                }
+                window.addEventListener('visibilitychange', markCurrentAsRead);
+                window.addEventListener('focus', markCurrentAsRead);
+
+                // Global online presence
+                window.Echo.join('online')
+                    .here((users) => { /* Online globally */ })
+                    .joining((user) => { /* User joined globally */ })
+                    .leaving((user) => { /* User left globally */ });
             }
         });
         @endif

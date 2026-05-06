@@ -84,6 +84,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('chats', [ChatController::class, 'index'])->name('chats.index');
     Route::get('chats/{user}', [ChatController::class, 'show'])->name('chats.show');
     Route::post('chats', [ChatController::class, 'store'])->name('chats.store');
+    Route::put('chats/{chat}', [ChatController::class, 'update'])->name('chats.update');
+    Route::delete('chats/{chat}/me', [ChatController::class, 'deleteForMe'])->name('chats.delete-me');
+    Route::delete('chats/{chat}/everyone', [ChatController::class, 'deleteForEveryone'])->name('chats.delete-everyone');
     Route::post('chats/{user}/read', [ChatController::class, 'markAsRead'])->name('chats.read');
     Route::post('chats/{user}/delivered', [ChatController::class, 'markAsDelivered'])->name('chats.delivered');
     Route::post('chats/delivered/all', [ChatController::class, 'markAllAsDelivered'])->name('chats.delivered.all');

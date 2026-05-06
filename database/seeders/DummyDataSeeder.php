@@ -104,6 +104,7 @@ class DummyDataSeeder extends Seeder
             $fotoDummy = ['men-01.jpg', 'women-01.jpg', 'kid-01.jpg', 'filigeri.jpg', 'souvenir.jpg', 'aksesoris-manten.jpg'];
             for ($j = 0; $j < rand(1, 2); $j++) {
                 FotoProduk::create([
+                    'kode_foto_produk' => 'FTO-' . strtoupper(Str::random(6)),
                     'produk_id' => $produk->id,
                     'file_foto_produk' => 'produk/' . $faker->randomElement($fotoDummy),
                 ]);

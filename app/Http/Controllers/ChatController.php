@@ -27,8 +27,9 @@ class ChatController extends Controller
 
     public function show(User $user)
     {
+        $user->load('usaha');
         $currentUser = Auth::user();
-        $chatUsers = $this->getChatUsers($currentUser);
+        $chatUsers = $this->getChatUsers($currentUser, $user->id);
         
         $messages = Chat::where(function($q) use ($currentUser, $user) {
             $q->where('sender_id', $currentUser->id)->where('receiver_id', $user->id);
@@ -36,16 +37,7 @@ class ChatController extends Controller
             $q->where('sender_id', $user->id)->where('receiver_id', $currentUser->id);
         })->orderBy('created_at', 'asc')->get();
 
-        // Mark messages as read and broadcast event
-        $unreadMessages = Chat::where('sender_id', $user->id)
-            ->where('receiver_id', $currentUser->id)
-            ->where('is_read', false)
-            ->get();
-
-        foreach ($unreadMessages as $msg) {
-            $msg->update(['is_read' => true, 'is_delivered' => true]);
-            broadcast(new \App\Events\MessageRead($msg))->toOthers();
-        }
+        // Note: Read status is now handled via AJAX in the frontend to avoid pre-fetching issues.
 
         if (request()->ajax()) {
             return response()->json([
@@ -58,34 +50,37 @@ class ChatController extends Controller
         if ($currentUser->role == 'umkm') $layout = 'layouts.umkm';
         if ($currentUser->role == 'user') $layout = 'layouts.user';
 
+        // Custom display name if usaha_id is provided
+        if (request()->has('usaha_id')) {
+            $specificUsaha = \App\Models\Usaha::find(request('usaha_id'));
+            if ($specificUsaha && $specificUsaha->user_id == $user->id) {
+                $user->display_name = $specificUsaha->nama_usaha;
+                $user->specific_usaha = $specificUsaha;
+            }
+        }
+        
+        if (!isset($user->display_name)) {
+            $user->display_name = $user->usaha->nama_usaha ?? ($user->nama ?? $user->username);
+        }
+
         return view('chats.show_new', compact('user', 'messages', 'chatUsers', 'layout'));
     }
 
-    private function getChatUsers($user)
+    private function getChatUsers($user, $activeChatUserId = null)
     {
-        // Define relevant roles to fetch automatically based on current user's role
-        $autoRoles = [];
-        if ($user->role === 'user') {
-            $autoRoles = ['umkm'];
-        } elseif ($user->role === 'umkm') {
-            $autoRoles = ['user'];
-        } elseif (in_array($user->role, ['admin_utama', 'admin_wilayah'])) {
-            $autoRoles = ['umkm', 'user', 'admin_wilayah', 'admin_utama'];
-        }
-
         // Fetch users who:
         // 1. Have already chatted with the current user OR
-        // 2. Are in the automatically discovery roles
+        // 2. Is the user we are currently chatting with (to allow starting new chats)
         return User::where('id', '!=', $user->id)
-            ->where(function($query) use ($user, $autoRoles) {
+            ->where(function($query) use ($user, $activeChatUserId) {
                 $query->whereHas('chatsSent', function($q) use ($user) {
                     $q->where('receiver_id', $user->id);
                 })->orWhereHas('chatsReceived', function($q) use ($user) {
                     $q->where('sender_id', $user->id);
                 });
                 
-                if (!empty($autoRoles)) {
-                    $query->orWhereIn('role', $autoRoles);
+                if ($activeChatUserId) {
+                    $query->orWhere('id', $activeChatUserId);
                 }
             })
             ->with(['usaha', 'chatsSent' => function($q) use ($user) {
@@ -100,7 +95,7 @@ class ChatController extends Controller
                 
                 $lastChat = collect([$lastSent, $lastReceived])->filter()->sortByDesc('created_at')->first();
                 
-                $u->display_name = ($u->role === 'umkm' && $u->usaha) ? $u->usaha->nama_usaha : $u->username;
+                $u->display_name = $u->usaha->nama_usaha ?? ($u->nama ?? $u->username);
                 $u->last_message = $lastChat ? $lastChat->message : '';
                 $u->last_message_sender_id = $lastChat ? $lastChat->sender_id : null;
                 $u->last_message_is_read = $lastChat ? $lastChat->is_read : false;
@@ -125,36 +120,39 @@ class ChatController extends Controller
 
     public function store(Request $request)
     {
+        \Log::info('Chat Store Request:', $request->all());
+
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
             'message' => 'nullable|string',
-            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf,docx|max:5120',
+            'attachment' => 'nullable|file|max:20480|mimes:jpg,jpeg,png,gif,pdf,docx,doc,xls,xlsx,ppt,pptx,txt,zip',
+            'reply_to_id' => 'nullable|exists:chats,id',
         ]);
 
         $type = 'text';
         $attachmentPath = null;
+        $messageContent = $request->input('message');
 
-        $fileName = $request->message ?? '';
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
-            $originalName = $file->getClientOriginalName();
-            if (empty($fileName)) {
-                $fileName = $originalName;
-            }
-            $extension = $file->getClientOriginalExtension();
-            $type = in_array($extension, ['jpg', 'jpeg', 'png']) ? 'image' : 'file';
+            $extension = strtolower($file->getClientOriginalExtension());
+            $type = in_array($extension, ['jpg', 'jpeg', 'png', 'gif']) ? 'image' : 'file';
             $attachmentPath = $file->store('chat_attachments', 'public');
         }
 
         $chat = Chat::create([
             'sender_id' => Auth::id(),
             'receiver_id' => $request->receiver_id,
-            'message' => $fileName,
+            'message' => $messageContent,
             'type' => $type,
             'attachment' => $attachmentPath,
+            'reply_to_id' => $request->reply_to_id,
         ]);
 
-        // Broadcast the message for real-time delivery
+        \Log::info('Chat Created:', $chat->toArray());
+
+        $chat->load('replyTo');
+
         broadcast(new \App\Events\MessageSent($chat))->toOthers();
 
         if ($request->ajax()) {
@@ -164,9 +162,70 @@ class ChatController extends Controller
         return back()->with('success', 'Pesan terkirim.');
     }
 
+    public function update(Request $request, Chat $chat)
+    {
+        if ($chat->sender_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'message' => 'required|string',
+        ]);
+
+        try {
+            $chat->update([
+                'message' => $request->message,
+                'is_edited' => true,
+            ]);
+
+            $chat->load(['sender', 'receiver']);
+
+            broadcast(new \App\Events\MessageUpdated($chat))->toOthers();
+
+            return response()->json($chat);
+        } catch (\Exception $e) {
+            \Log::error("Chat Update Error: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
+            return response()->json([
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500);
+        }
+    }
+
+    public function deleteForMe(Chat $chat)
+    {
+        $user = Auth::user();
+        if ($chat->sender_id == $user->id) {
+            $chat->update(['deleted_by_sender' => true]);
+        } else if ($chat->receiver_id == $user->id) {
+            $chat->update(['deleted_by_receiver' => true]);
+        }
+
+        broadcast(new \App\Events\MessageDeleted($chat->id, $chat->sender_id, $chat->receiver_id, 'me'));
+
+        return response()->json(['success' => true]);
+    }
+
+    public function deleteForEveryone(Chat $chat)
+    {
+        $this->authorize('delete', $chat);
+
+        $senderId = $chat->sender_id;
+        $receiverId = $chat->receiver_id;
+        $chatId = $chat->id;
+
+        $chat->delete();
+
+        broadcast(new \App\Events\MessageDeleted($chatId, $senderId, $receiverId, 'everyone'));
+
+        return response()->json(['success' => true]);
+    }
+
     public function markAsRead(User $user)
     {
         $currentUser = Auth::user();
+        \Log::info("Chat: User {$currentUser->id} marking messages from {$user->id} as READ");
         $unreadMessages = Chat::where('sender_id', $user->id)
             ->where('receiver_id', $currentUser->id)
             ->where('is_read', false)
@@ -182,6 +241,7 @@ class ChatController extends Controller
     public function markAsDelivered(User $user)
     {
         $currentUser = Auth::user();
+        \Log::info("Chat: User {$currentUser->id} marking messages from {$user->id} as DELIVERED");
         $undeliveredMessages = Chat::where('sender_id', $user->id)
             ->where('receiver_id', $currentUser->id)
             ->where('is_delivered', false)

@@ -104,7 +104,13 @@
                                         <li><i class="fa fa-star{{ $i <= $fullStars ? '' : '-o' }}"></i></li>
                                     @endfor
                                 </ul>
-                                <p class="product-reviews">20 Reviews</p>
+                                <p class="product-reviews">
+                                    @if($produk->reviews->count() > 0)
+                                        {{ $produk->reviews->count() }} Reviews
+                                    @else
+                                        Belum ada review
+                                    @endif
+                                </p>
                             </div>
                         </a>
                     </div>

@@ -16,7 +16,7 @@ class UpdateLastSeen
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check()) {
+        if (Auth::check() && $request->is('chats*')) {
             Auth::user()->update(['last_seen_at' => now()]);
         }
         return $next($request);

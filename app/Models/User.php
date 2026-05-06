@@ -69,4 +69,10 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Produk::class, 'favorits', 'user_id', 'produk_id')->withTimestamps();
     }
+
+    public function isOnline()
+    {
+        if (!$this->last_seen_at) return false;
+        return $this->last_seen_at->gt(now()->subMinutes(2));
+    }
 }

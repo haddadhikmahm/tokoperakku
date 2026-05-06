@@ -108,11 +108,12 @@
     .avatar-wrapper { position: relative; flex-shrink: 0; }
     .avatar-img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid var(--chat-border); }
     
-    .contact-info { flex: 1; min-width: 0; }
-    .contact-name-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
-    .contact-name { font-size: 14px; font-weight: 600; color: var(--chat-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .contact-info { flex: 1; min-width: 0; padding-left: 12px; }
+    .contact-name-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+    .contact-name { font-weight: 600; color: var(--chat-text); font-size: 15px; }
     .chat-time { font-size: 11px; color: var(--chat-text-muted); }
-    .last-msg { font-size: 12px; color: var(--chat-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .last-msg { display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; gap: 8px; }
+    .last-msg-text { font-size: 12px; color: var(--chat-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 
     .typing-status {
         color: #22c55e;
@@ -179,7 +180,7 @@
                 <input type="text" id="contact-search" placeholder="Cari">
             </div>
             <div class="sort-by">
-                Sort by <span>Newest <i class="fas fa-chevron-down" style="font-size: 8px;"></i></span>
+                <!-- Sort by <span>Newest <i class="fas fa-chevron-down" style="font-size: 8px;"></i></span> -->
             </div>
         </div>
 
@@ -187,24 +188,30 @@
             @foreach($chatUsers as $chatUser)
             <a href="{{ route('chats.show', $chatUser->id) }}" class="contact-item" data-name="{{ strtolower($chatUser->display_name) }}">
                 <div class="avatar-wrapper">
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode($chatUser->username) }}&background=random" class="avatar-img" alt="">
-                    <div class="status-dot" id="status-dot-{{ $chatUser->id }}"></div>
+                    @if($chatUser->usaha && $chatUser->usaha->foto_usaha)
+                        <img src="{{ asset('storage/' . $chatUser->usaha->foto_usaha) }}" class="avatar-img" alt="">
+                    @elseif($chatUser->foto)
+                        <img src="{{ asset('storage/' . $chatUser->foto) }}" class="avatar-img" alt="">
+                    @else
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode($chatUser->display_name) }}&background=random" class="avatar-img" alt="">
+                    @endif
+                    <div class="status-dot {{ $chatUser->isOnline() ? 'online' : '' }}" id="status-dot-{{ $chatUser->id }}"></div>
                 </div>
                 <div class="contact-info">
                     <div class="contact-name-row">
                         <span class="contact-name">{{ $chatUser->display_name }}</span>
                         <span class="chat-time">{{ $chatUser->last_chat_time }}</span>
                     </div>
-                    <div class="last-msg d-flex justify-content-between align-items-center w-100">
-                        <span style="flex:1; overflow:hidden; text-overflow:ellipsis;">
+                    <div class="last-msg">
+                        <span class="last-msg-text">
                             @if($chatUser->unread_count > 0)
-                                <strong style="color: #e9edef;">{{ $chatUser->last_message ?: 'Klik untuk memulai chat' }}</strong>
+                                <strong style="color: var(--chat-text);">{{ $chatUser->last_message ?: 'Klik untuk memulai chat' }}</strong>
                             @else
                                 {{ $chatUser->last_message ?: 'Klik untuk memulai chat' }}
                             @endif
                         </span>
                         @if($chatUser->unread_count > 0)
-                            <span style="background: #00a884; color: #111b21; border-radius: 50%; padding: 2px 6px; font-size: 11px; font-weight: 600; margin-left: 5px;">
+                            <span class="unread-badge" style="background: #25d366; color: #000; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">
                                 {{ $chatUser->unread_count }}
                             </span>
                         @endif
@@ -227,6 +234,9 @@
 
 @section('js')
 <script>
+    // Reset active chat user when on index page
+    window.activeChatUserId = null;
+
     document.addEventListener('DOMContentLoaded', function() {
         const contactSearch = document.getElementById('contact-search');
         if (contactSearch) {
@@ -248,13 +258,30 @@
             if (window.Echo) {
                 window.Echo.private('chat.{{ Auth::id() }}')
                     .listen('.message.sent', (e) => {
+                        console.log('RealTime: New message received from ' + e.message.sender_id + ' (Index Page)');
                         updateSidebar(e.message);
+                    })
+                    .listen('.message.read', (e) => {
+                        if (e.chat) {
+                            console.log('WS Event: Message ' + e.chat.id + ' READ by receiver (Index Page)');
+                            const contactItem = document.querySelector(`.contact-item[href$="/chats/${e.chat.receiver_id}"]`);
+                            if (contactItem) {
+                                const badge = contactItem.querySelector('.unread-badge');
+                                if (badge) badge.style.display = 'none';
+                                const lastMsgTextStrong = contactItem.querySelector('.last-msg-text strong');
+                                if (lastMsgTextStrong) {
+                                    const span = lastMsgTextStrong.parentElement;
+                                    span.innerText = lastMsgTextStrong.innerText;
+                                }
+                            }
+                        }
                     });
 
-                window.Echo.join('online')
-                    .here((users) => { updateStatuses(users); })
-                    .joining((user) => { updateStatus(user, true); })
-                    .leaving((user) => { updateStatus(user, false); });
+                // Chat Module Presence (Status Online di Chat)
+                window.Echo.join('chat-module')
+                    .here((users) => { updateChatStatuses(users); })
+                    .joining((user) => { updateChatStatus(user, true); })
+                    .leaving((user) => { updateChatStatus(user, false); });
             }
         });
         @endif
@@ -265,10 +292,24 @@
                 const sidebar = document.getElementById('sidebar-contacts');
                 sidebar.prepend(contactItem);
                 
-                const lastMsgEl = contactItem.querySelector('.last-msg');
-                if (lastMsgEl) {
-                    lastMsgEl.innerHTML = `<strong>${msg.message}</strong>`;
+                // Update last message preview
+                const lastMsgText = contactItem.querySelector('.last-msg-text');
+                if (lastMsgText) {
+                    lastMsgText.innerHTML = `<strong>${msg.message || (msg.type === 'image' ? 'Gambar' : 'Berkas')}</strong>`;
                 }
+
+                // Update unread count bubble
+                const lastMsgRow = contactItem.querySelector('.last-msg');
+                let badge = lastMsgRow.querySelector('.unread-badge');
+                if (!badge) {
+                    const badgeHtml = `<span class="unread-badge" style="background: #25d366; color: #000; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">1</span>`;
+                    lastMsgRow.insertAdjacentHTML('beforeend', badgeHtml);
+                } else {
+                    badge.innerText = parseInt(badge.innerText) + 1;
+                    badge.style.display = 'flex';
+                }
+
+                // Update time
                 const timeEl = contactItem.querySelector('.chat-time');
                 if (timeEl) {
                     timeEl.innerText = new Date(msg.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -276,13 +317,13 @@
             }
         }
 
-        function updateStatus(user, isOnline) {
+        function updateChatStatus(user, isOnline) {
             const dot = document.getElementById(`status-dot-${user.id}`);
             if (dot) dot.classList.toggle('online', isOnline);
         }
 
-        function updateStatuses(users) {
-            users.forEach(u => updateStatus(u, true));
+        function updateChatStatuses(users) {
+            users.forEach(u => updateChatStatus(u, true));
         }
     });
 </script>
